@@ -1,5 +1,5 @@
 OUT			= monitor
-CFLAGS 		= -Wall
+CFLAGS 		= -Wall -g
 CPPFLAGS 	= $(CFLAGS) -std=c++11
 LIBS		= -lpthread
 CC			= gcc
