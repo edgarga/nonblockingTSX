@@ -1,2 +1,7 @@
+
 *.o
 linkedListRun
+
+.vscode/
+cmake-build-debug
+CMakteLists.txt

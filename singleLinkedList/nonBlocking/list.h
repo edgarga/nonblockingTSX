@@ -9,7 +9,8 @@ class List{
         ~List();
 
         bool insert(int key);
-        bool del(int key);
+        bool del(int searchKey);
         bool contains(int key);
-        Node* search(int key, Node **left_node);
+        Node* search(int key, Node **leftNode);
+        void print();
 };

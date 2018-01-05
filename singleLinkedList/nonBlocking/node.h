@@ -7,4 +7,5 @@ class Node{
         Node();
         Node(int key);
         ~Node();
+
 };
