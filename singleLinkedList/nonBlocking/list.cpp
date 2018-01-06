@@ -18,7 +18,8 @@ bool List::insert(int key) {
         newNode->next = rightNode;
 
         (*leftNode).next = newNode;
-        if (rightNode != this->tail) {// TODO: compare and swap befehl suchen und in if einsetzen
+        if (leftNode->next.compare_exchange_weak(rightNode,
+                                                 newNode)) {// TODO: compare and swap befehl suchen und in if einsetzen
             return true;
         }
     } while (true);
@@ -52,8 +53,9 @@ Node *List::search(int searchKey, Node **leftNode) {
         }
 
 //        3: Removing removable Nodes
-        (*leftNode)->next = rightNode; //TODO:delete
-        if (true) {//TODO: !CAS (&leftNode.next), leftNextNode, rightNode)
+//        (*leftNode)->next = rightNode; //TODO:delete
+        if ((*leftNode)->next.compare_exchange_weak(leftNextNode,
+                                                    rightNode)) {//TODO: !CAS (&leftNode.next), leftNextNode, rightNode)
             if ((rightNode != this->tail) && rightNode->markedToDelele) {
                 //TODO: delete the node properly
                 continue;
@@ -87,6 +89,7 @@ bool List::del(int searchKey) {
             return false;
 
         rightNextNode = rightNode->next;
+        std::cout << "tet: " << rightNextNode->key << std::endl;
 
         if (!rightNextNode->markedToDelele) {
             rightNode->markedToDelele = true;
@@ -95,9 +98,11 @@ bool List::del(int searchKey) {
         }
     } while (true);
 
-    leftNode->next = rightNextNode; //TODO: delete after the next line is correct
-    if (true) //TODO: !CAS (&leftNOde.next), rightNode, rightNextNode)
-        return true;
+//    leftNode->next = rightNextNode; //TODO: delete after the next line is correct
+    if (leftNode->next.compare_exchange_weak(rightNode,
+                                             rightNextNode)) //TODO: !CAS (&leftNOde.next), rightNode, rightNextNode)
+        rightNode = this->search(searchKey, &leftNode);
+    return true;
 }
 
 void List::print() {

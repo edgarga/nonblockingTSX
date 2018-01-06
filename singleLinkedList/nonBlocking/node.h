@@ -1,8 +1,10 @@
+#include <atomic>
+
 class Node{
     public:
         bool markedToDelele = false;
         int key;
-        Node *next;
+        std::atomic<Node*> next;
 
         Node();
         Node(int key);
