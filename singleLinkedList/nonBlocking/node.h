@@ -2,7 +2,7 @@
 
 class Node{
     public:
-        bool markedToDelele = false;
+        std::atomic<bool> markedToDelete;
         int key;
         std::atomic<Node*> next;
 

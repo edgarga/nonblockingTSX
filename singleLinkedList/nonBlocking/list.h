@@ -9,8 +9,8 @@ class List{
         ~List();
 
         bool insert(int key);
-        bool del(int searchKey);
+        bool del(int searchKey, int threadId);
         bool contains(int key);
-        Node* search(int key, Node **leftNode);
+        Node* search(int key, Node **leftNode, int threadId);
         void print();
 };

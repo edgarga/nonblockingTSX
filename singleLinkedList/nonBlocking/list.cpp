@@ -12,51 +12,66 @@ bool List::insert(int key) {
     Node *rightNode, *leftNode;
 
     do {
-        rightNode = this->search(key, &leftNode);
-        if ((rightNode != this->tail) && (rightNode->key == key))
+        rightNode = this->search(key, &leftNode, -9);
+        if ((rightNode != this->tail) && (rightNode->key == key)) {
+//            std::cout << "already exists:";
+//            delete newNode;
             return false;
+        }
         newNode->next = rightNode;
 
-        (*leftNode).next = newNode;
+//        (*leftNode).next = newNode;
+
         if (leftNode->next.compare_exchange_weak(rightNode,
-                                                 newNode)) {// TODO: compare and swap befehl suchen und in if einsetzen
+                                                 newNode)) {
             return true;
         }
     } while (true);
 }
 
-Node *List::search(int searchKey, Node **leftNode) {
+Node *List::search(int searchKey, Node **leftNode, int threadId) {
     Node *leftNextNode, *rightNode;
 
     do {
+//        if (threadId >= 0 && leftNextNode != nullptr && rightNode != nullptr && leftNode != nullptr && (*leftNode) != nullptr){
+//            std::cout << threadId << ": searching: " << searchKey;
+//            std::cout <<"| " << (*leftNode)->key << " - (";
+//            std::cout          << leftNextNode->key;
+//            std::cout          << " == " << rightNode->key << ")" << std::endl;
+//
+//        }
+        if (threadId >= 0)
+            std::cout << "+1";
         Node *t = this->head;
         Node *tNext = this->head->next;
-
 //        1: Find left and right nodes
         do {
-            if (!tNext->markedToDelele) {
+
+            if (!tNext->markedToDelete) {
                 (*leftNode) = t;
                 leftNextNode = tNext;
             }
-            t = tNext; //TODO: check if this is correct| original line: t = get_unmarked_reference(tNext);
+            t = tNext;
             if (t == this->tail) break;
             tNext = t->next;
-        } while (tNext->markedToDelele || (t->key < searchKey));
+        } while (tNext->markedToDelete || (t->key < searchKey));
         rightNode = t;
-
+        if (threadId >= 0)
+            std::cout << "+2 ";
 //        2: Check Nodes are adjacent
         if (leftNextNode == rightNode) {
-            if ((rightNode != this->tail) && rightNode->markedToDelele)
+            if (rightNode->markedToDelete) std::cout << "marked ";
+            if ((rightNode != this->tail) && rightNode->markedToDelete) {
                 continue;
-            else
+            } else {
                 return rightNode;
+            }
         }
-
-//        3: Removing removable Nodes
-//        (*leftNode)->next = rightNode; //TODO:delete
+        if (threadId >= 0)
+            std::cout << "+3" << std::endl;
         if ((*leftNode)->next.compare_exchange_weak(leftNextNode,
-                                                    rightNode)) {//TODO: !CAS (&leftNode.next), leftNextNode, rightNode)
-            if ((rightNode != this->tail) && rightNode->markedToDelele) {
+                                                    rightNode)) {
+            if ((rightNode != this->tail) && rightNode->markedToDelete) {
                 //TODO: delete the node properly
                 continue;
             } else {
@@ -71,37 +86,38 @@ Node *List::search(int searchKey, Node **leftNode) {
 bool List::contains(int key) {
     Node *rightNode, *leftNode;
 
-    rightNode = search(key, &leftNode);
+    rightNode = search(key, &leftNode, -1);
     if ((rightNode == this->tail) || (rightNode->key != key))
         return false;
     else
         return true;
 }
 
-bool List::del(int searchKey) {
+bool List::del(int searchKey, int threadId) {
     Node *rightNode, *rightNextNode, *leftNode;
 
     do {
-        rightNode = search(searchKey, &leftNode);
+        std::cout << " trying del: " << searchKey << std::endl;
 
+        rightNode = search(searchKey, &leftNode, threadId);
+        std::cout << "found node for: " << searchKey << std::endl;
 //        check if right node is the searched Node
         if ((rightNode == this->tail) || (rightNode->key != searchKey))
             return false;
 
         rightNextNode = rightNode->next;
-        std::cout << "tet: " << rightNextNode->key << std::endl;
 
-        if (!rightNextNode->markedToDelele) {
-            rightNode->markedToDelele = true;
+        if (!rightNextNode->markedToDelete) {
+            rightNode->markedToDelete = true;
             if (true) //TODO: CAS (&(right_node.next), rightNextNode, getMarkedReferece(rightNodeNext))
                 break;
         }
     } while (true);
 
 //    leftNode->next = rightNextNode; //TODO: delete after the next line is correct
-    if (leftNode->next.compare_exchange_weak(rightNode,
-                                             rightNextNode)) //TODO: !CAS (&leftNOde.next), rightNode, rightNextNode)
-        rightNode = this->search(searchKey, &leftNode);
+    if (!leftNode->next.compare_exchange_weak(rightNode,
+                                              rightNextNode)) //TODO: !CAS (&leftNOde.next), rightNode, rightNextNode)
+        rightNode = this->search(searchKey, &leftNode, threadId);
     return true;
 }
 

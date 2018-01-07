@@ -4,12 +4,12 @@
 Node::Node(){
     this->key = -1;
     this->next = nullptr;
-    this->markedToDelele = false;
+    this->markedToDelete = false;
 }
 
 Node::Node(int key){
     this->key = key;
-    this->markedToDelele = false;
+    this->markedToDelete = false;
 }
 
 Node::~Node(){
