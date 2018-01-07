@@ -7,6 +7,11 @@ List::List() {
     this->head->next = this->tail;
 }
 
+/**
+ * Inserts a new Node with the specified Value
+ * @param key
+ * @return true if insertion was successful, false otherwise (i.e. because key already exists)
+ */
 bool List::insert(int key) {
     Node *newNode = new Node(key);
     Node *rightNode, *leftNode;
@@ -25,6 +30,12 @@ bool List::insert(int key) {
     } while (true);
 }
 
+/**
+ * searches the the Node with the specified key and deletes marked Nodes
+ * @param searchKey
+ * @param leftNode
+ * @return if key exists: the Node with the specified key, tail otherwise
+ */
 Node *List::search(int searchKey, Node **leftNode) {
     Node *leftNextNode, *rightNode;
 
@@ -62,9 +73,9 @@ Node *List::search(int searchKey, Node **leftNode) {
             }
         }
 
-//        contin:;
     } while (true);
 }
+
 
 bool List::contains(int key) {
     Node *rightNode, *leftNode;
@@ -76,6 +87,11 @@ bool List::contains(int key) {
         return true;
 }
 
+/**
+ * marks the Node with the specified key
+ * @param searchKey
+ * @return true if node marked successfully, false otherwise (i.e. because the key does not exist in the List)
+ */
 bool List::del(int searchKey) {
     Node *rightNode, *rightNextNode, *leftNode;
 
@@ -83,7 +99,7 @@ bool List::del(int searchKey) {
 
         rightNode = search(searchKey, &leftNode);
 //        check if right node is the searched Node
-        if ((rightNode == this->tail) || (rightNode->key != searchKey)){
+        if ((rightNode == this->tail) || (rightNode->key != searchKey)) {
             return false;
         }
 
@@ -91,18 +107,19 @@ bool List::del(int searchKey) {
 
         if (!rightNode->markedToDelete) {
             rightNode->markedToDelete = true;
-            if (true) //TODO: CAS (&(right_node.next), rightNextNode, getMarkedReferece(rightNodeNext))
-                break;
+            break;
         }
     } while (true);
 
-//    leftNode->next = rightNextNode; //TODO: delete after the next line is correct
     if (!leftNode->next.compare_exchange_weak(rightNode,
-                                              rightNextNode)) //TODO: !CAS (&leftNOde.next), rightNode, rightNextNode)
+                                              rightNextNode))
         rightNode = this->search(searchKey, &leftNode);
     return true;
 }
 
+/**
+ * prints the list and all its Nodes
+ */
 void List::print() {
     Node *currentNode = this->head;
 

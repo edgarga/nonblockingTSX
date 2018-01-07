@@ -4,9 +4,17 @@
 #include "list.h"
 #include "mcp.h"
 
+/**
+ * arrays to count successful operations
+ */
 int *pushCountArray, *deleteCountArray;
+
+/**
+ * highest Number that can be present in the List
+ */
 int upperLimit = 0;
-std::atomic<bool> bla(false);
+
+
 void pushWorker(List &list, int pushCount, int threadId) {
 
     for (int i = 0; i < pushCount; i++) {
@@ -29,6 +37,7 @@ void deleteWorker(List &list, int deleteCount, int threadId) {
 
 int main(int numberOfArguments, char *arguments[]) {
     mcp_init(numberOfArguments, arguments);
+
     upperLimit = num_elements;
 
 //    initialize resultChecking arrays
@@ -39,6 +48,9 @@ int main(int numberOfArguments, char *arguments[]) {
         deleteCountArray[j] = 0;
     }
 
+    /**
+     * start the test
+     */
     List list;
     std::vector<std::thread> threadVector;
     time_start();
@@ -50,24 +62,21 @@ int main(int numberOfArguments, char *arguments[]) {
     for (auto &t: threadVector)
         t.join();
 
-
-
-
-
-
-
-
-
-
-
-
-
     time_stop();
-    int someCount = 0;
+
+    /**
+     * calculate the successful insert and delete operations
+     */
+    int pushCount = 0;
+    int delCount = 0;
     for (int x = 0; x < num_threads; x++) {
-        someCount += pushCountArray[x] - deleteCountArray[x];
+        pushCount += pushCountArray[x];
+        delCount += deleteCountArray[x];
     }
 
+    /**
+     * traverse the List and count the actual present Nodes
+     */
     int count = 0;
     Node *curr = list.head;
     while (curr->next != list.tail) {
@@ -75,7 +84,8 @@ int main(int numberOfArguments, char *arguments[]) {
             count++;
         curr = curr->next;
     }
-    std::cout << "count: " << count << " | countByThreads: " << someCount << std::endl;
+    std::cout << "count: " << count << " | countByThreads: " << pushCount - delCount << std::endl;
+    std::cout << "inserts: " << pushCount << " | deletes: " << delCount << std::endl;
     time_print();
     return 0;
 }
