@@ -12,15 +12,11 @@ bool List::insert(int key) {
     Node *rightNode, *leftNode;
 
     do {
-        rightNode = this->search(key, &leftNode, -9);
+        rightNode = this->search(key, &leftNode);
         if ((rightNode != this->tail) && (rightNode->key == key)) {
-//            std::cout << "already exists:";
-//            delete newNode;
             return false;
         }
         newNode->next = rightNode;
-
-//        (*leftNode).next = newNode;
 
         if (leftNode->next.compare_exchange_weak(rightNode,
                                                  newNode)) {
@@ -29,19 +25,10 @@ bool List::insert(int key) {
     } while (true);
 }
 
-Node *List::search(int searchKey, Node **leftNode, int threadId) {
+Node *List::search(int searchKey, Node **leftNode) {
     Node *leftNextNode, *rightNode;
 
     do {
-//        if (threadId >= 0 && leftNextNode != nullptr && rightNode != nullptr && leftNode != nullptr && (*leftNode) != nullptr){
-//            std::cout << threadId << ": searching: " << searchKey;
-//            std::cout <<"| " << (*leftNode)->key << " - (";
-//            std::cout          << leftNextNode->key;
-//            std::cout          << " == " << rightNode->key << ")" << std::endl;
-//
-//        }
-        if (threadId >= 0)
-            std::cout << "+1";
         Node *t = this->head;
         Node *tNext = this->head->next;
 //        1: Find left and right nodes
@@ -54,21 +41,17 @@ Node *List::search(int searchKey, Node **leftNode, int threadId) {
             t = tNext;
             if (t == this->tail) break;
             tNext = t->next;
-        } while (tNext->markedToDelete || (t->key < searchKey));
+        } while (t->markedToDelete || (t->key < searchKey));
         rightNode = t;
-        if (threadId >= 0)
-            std::cout << "+2 ";
 //        2: Check Nodes are adjacent
         if (leftNextNode == rightNode) {
-            if (rightNode->markedToDelete) std::cout << "marked ";
             if ((rightNode != this->tail) && rightNode->markedToDelete) {
                 continue;
             } else {
                 return rightNode;
             }
         }
-        if (threadId >= 0)
-            std::cout << "+3" << std::endl;
+
         if ((*leftNode)->next.compare_exchange_weak(leftNextNode,
                                                     rightNode)) {
             if ((rightNode != this->tail) && rightNode->markedToDelete) {
@@ -86,28 +69,27 @@ Node *List::search(int searchKey, Node **leftNode, int threadId) {
 bool List::contains(int key) {
     Node *rightNode, *leftNode;
 
-    rightNode = search(key, &leftNode, -1);
+    rightNode = search(key, &leftNode);
     if ((rightNode == this->tail) || (rightNode->key != key))
         return false;
     else
         return true;
 }
 
-bool List::del(int searchKey, int threadId) {
+bool List::del(int searchKey) {
     Node *rightNode, *rightNextNode, *leftNode;
 
     do {
-        std::cout << " trying del: " << searchKey << std::endl;
 
-        rightNode = search(searchKey, &leftNode, threadId);
-        std::cout << "found node for: " << searchKey << std::endl;
+        rightNode = search(searchKey, &leftNode);
 //        check if right node is the searched Node
-        if ((rightNode == this->tail) || (rightNode->key != searchKey))
+        if ((rightNode == this->tail) || (rightNode->key != searchKey)){
             return false;
+        }
 
         rightNextNode = rightNode->next;
 
-        if (!rightNextNode->markedToDelete) {
+        if (!rightNode->markedToDelete) {
             rightNode->markedToDelete = true;
             if (true) //TODO: CAS (&(right_node.next), rightNextNode, getMarkedReferece(rightNodeNext))
                 break;
@@ -117,7 +99,7 @@ bool List::del(int searchKey, int threadId) {
 //    leftNode->next = rightNextNode; //TODO: delete after the next line is correct
     if (!leftNode->next.compare_exchange_weak(rightNode,
                                               rightNextNode)) //TODO: !CAS (&leftNOde.next), rightNode, rightNextNode)
-        rightNode = this->search(searchKey, &leftNode, threadId);
+        rightNode = this->search(searchKey, &leftNode);
     return true;
 }
 
