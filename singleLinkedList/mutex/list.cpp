@@ -14,18 +14,23 @@ List::List() {
 }
 
 Node *List::search(int val, Node **leftNode) {
-    Node *nextNodeOfLeftNode;
-
-    Node *test = new Node(-204);
+//    Node *nextNodeOfLeftNode;
 
     Node *t = this->head;
     Node *tNext = this->head->next;
+
     do {
         (*leftNode) = t;
-        nextNodeOfLeftNode = tNext;
+//        nextNodeOfLeftNode = tNext;
         t = tNext;
         if (t == this->tail) break;
-        tNext = t->next;
+
+        if (t->next != nullptr) {
+            tNext = t->next;
+        } else {
+            t = this->head;
+            tNext = t->next;
+        }
     } while (t->value < val);
 
     return t;
@@ -46,21 +51,32 @@ bool List::insert(int val) {
     Node *leftNode, *rightNode;
     do {
         rightNode = this->search(val, &leftNode);
-        std::unique_lock<std::mutex> lockLeftNode(leftNode->mtx, std::defer_lock);
-        std::unique_lock<std::mutex> lockSuccessorLeftNode(leftNode->next->mtx, std::defer_lock);
-        std::lock(lockLeftNode, lockSuccessorLeftNode);
-        if (leftNode->next->value == val)
+//        std::cout << "trying ins: " << leftNode->value << " and " << leftNode->next->value << std::endl;
+        std::lock(leftNode->mtx, rightNode->mtx);
+        std::lock_guard<std::mutex> lock(leftNode->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lockNext(rightNode->mtx, std::adopt_lock);
+//        std::cout << "locked ins: " << leftNode->value << " and " << leftNode->next->value << std::endl;
+        if (rightNode->value == val){
+//            leftNode->mtx.unlock();
+//            rightNode->mtx.unlock();
             return false;
-
-
-        if (leftNode->next != nullptr && ((leftNode->next->value > val && leftNode->next->next != nullptr) || leftNode->next == this->tail)) {
-            newNode->next = leftNode->next;
-            leftNode->next = newNode;
-            return true;
         }
 
-    } while (true);
 
+        if (!leftNode->deleted && leftNode->next == rightNode &&
+            ((rightNode->value > val && !rightNode->deleted) ||
+                    rightNode == this->tail)) {
+
+            newNode->next = rightNode;
+            leftNode->next = newNode;
+
+//            leftNode->mtx.unlock();
+//            rightNode->mtx.unlock();
+            return true;
+        }
+//        leftNode->mtx.unlock();
+//        rightNode->mtx.unlock();
+    } while (true);
 }
 
 bool List::del(int val) {
@@ -68,34 +84,60 @@ bool List::del(int val) {
 
     do {
         nodeToDelete = this->search(val, &leftNode);
-        std::unique_lock<std::mutex> lockOfNodeToDelete(nodeToDelete->mtx, std::defer_lock);
-        std::unique_lock<std::mutex> lockOfLeftNode(leftNode->mtx, std::defer_lock);
-
-        std::lock(lockOfNodeToDelete, lockOfLeftNode);
         if (nodeToDelete->value != val) return false;
-
         rightNode = nodeToDelete->next;
-        if (leftNode->next != nullptr && nodeToDelete->next != nullptr &&
-            (rightNode->next != nullptr || rightNode == this->tail) &&
-            leftNode->next == nodeToDelete) {
+        std::cout << "trying del: " << nodeToDelete->value << " and " << leftNode->value << " and " << nodeToDelete->next->value  << std::endl;
+        std::lock(nodeToDelete->mtx, leftNode->mtx, rightNode->mtx);
+        std::lock_guard<std::mutex> lockOfNodeToDelete(nodeToDelete->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lockOfLeftNode(leftNode->mtx, std::adopt_lock);
+        std::lock_guard<std::mutex> lockRight(nodeToDelete->next->mtx, std::adopt_lock);
+        std::cout << "locked del: " << nodeToDelete->value << " and " << leftNode->value << " and " << nodeToDelete->next->value  << std::endl;
 
-            leftNode->next = nodeToDelete->next;
-            nodeToDelete->next = nullptr;
+
+
+        if(nodeToDelete->deleted){
+//            nodeToDelete->mtx.unlock();
+//            leftNode->mtx.unlock();
+//            rightNode->mtx.unlock();
+            return false;
+        }
+
+        if (!leftNode->deleted  &&
+            !rightNode->deleted &&
+            leftNode->next == nodeToDelete &&
+                nodeToDelete->next == rightNode) {
+
+            leftNode->next = rightNode;
+            nodeToDelete->deleted = true;
+
+//            nodeToDelete->mtx.unlock();
+//            leftNode->mtx.unlock();
+//            rightNode->mtx.unlock();
+
             return true;
         }
+
+//        nodeToDelete->mtx.unlock();
+//        leftNode->mtx.unlock();
+//        rightNode->mtx.unlock();
 
     } while (true);
 
 }
 
-void List::print() {
+bool List::print() {
     Node *currentNode = this->head;
-
+    int oldVal = -20;
+    bool isAsc = true;
     while (currentNode != this->tail) {
+        if (oldVal >= currentNode->value)
+            isAsc = true;
         std::cout << " " << currentNode->value << " " << " -> ";
         currentNode = currentNode->next;
+        oldVal = currentNode->value;
     }
     std::cout << " " << currentNode->value << std::endl;
+    return isAsc;
 }
 
 List::~List() {}

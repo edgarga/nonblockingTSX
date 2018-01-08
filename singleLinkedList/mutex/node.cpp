@@ -7,11 +7,13 @@
 Node::Node() {
     this->value = -1;
     this->next = nullptr;
+    this->deleted = false;
 }
 
 Node::Node(int value) {
     this->value = value;
     this->next = nullptr;
+    this->deleted = false;
 }
 
 bool Node::setNextProtected(Node *newNext) {

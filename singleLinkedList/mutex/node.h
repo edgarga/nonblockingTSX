@@ -8,6 +8,7 @@ class Node{
 public:
     int value;
     std::mutex mtx;
+    bool deleted;
     Node *next;
 
     Node();

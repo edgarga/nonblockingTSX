@@ -13,9 +13,9 @@ int *deleteCountArray;
 
 void insertWorker(List &list, int numberOfInserts, int threadId) {
     for (int i = 0; i < numberOfInserts; i++) {
-        int valueToInsert= list.insert(rand() % upperLimit);
+        int valueToInsert = rand() % upperLimit;
 //        std::cout << threadId << " inserting: " << valueToInsert<<  " " << upperLimit << std::endl;
-        if (valueToInsert) {
+        if (list.insert(valueToInsert)) {
 
 
             insertCountArray[threadId]++;
@@ -23,18 +23,17 @@ void insertWorker(List &list, int numberOfInserts, int threadId) {
     }
 }
 
-void deleteWorker(List &list, int numberOfDeletes, int threadId){
+void deleteWorker(List &list, int numberOfDeletes, int threadId) {
     for (int i = 0; i < numberOfDeletes; i++) {
-        int valueToDelete= list.del(rand() % upperLimit);
+        int valueToDelete = rand() % upperLimit;
 //        std::cout << threadId << " inserting: " << valueToInsert<<  " " << upperLimit << std::endl;
-        if (valueToDelete) {
+        if (list.del(valueToDelete)) {
 
 
             deleteCountArray[threadId]++;
         }
     }
 }
-
 
 
 int main(int numberOfArguments, char *args[]) {
@@ -55,7 +54,7 @@ int main(int numberOfArguments, char *args[]) {
 
 
     std::vector<std::thread> threads;
-    for (int i = 0; i < num_threads; i++){
+    for (int i = 0; i < num_threads; i++) {
         threads.push_back(std::thread(insertWorker, std::ref(list), num_elements, i));
         threads.push_back(std::thread(deleteWorker, std::ref(list), num_elements, i));
     }
@@ -71,12 +70,13 @@ int main(int numberOfArguments, char *args[]) {
     Node *curr = list.head->next;
     while (curr != list.tail) {
         elementCount++;
+
         curr = curr->next;
     }
 
     int elementsInserted = 0;
     int elementsDeleted = 0;
-    for (int i = 0; i < num_threads; i++){
+    for (int i = 0; i < num_threads; i++) {
         elementsInserted += insertCountArray[i];
         elementsDeleted += deleteCountArray[i];
     }

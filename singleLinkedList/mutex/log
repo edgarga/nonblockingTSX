@@ -1,0 +1,7 @@
+
+ *** EXECUTION TIME: 0.000371508s ***
+
+elements in List: 1
+element pushed by threads - deletes: 1
+element pushed by threads: 1
+element deleted by threads: 0

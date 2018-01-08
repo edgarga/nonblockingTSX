@@ -21,6 +21,6 @@ public:
     Node* predecessorOf(int val);
     bool del(int val);
 
-    void print();
+    bool print();
 };
 #endif //MUTEX_LIST_H
