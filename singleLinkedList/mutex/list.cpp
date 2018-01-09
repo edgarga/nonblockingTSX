@@ -86,12 +86,12 @@ bool List::del(int val) {
         nodeToDelete = this->search(val, &leftNode);
         if (nodeToDelete->value != val) return false;
         rightNode = nodeToDelete->next;
-        std::cout << "trying del: " << nodeToDelete->value << " and " << leftNode->value << " and " << nodeToDelete->next->value  << std::endl;
+//        std::cout << "trying del: " << nodeToDelete->value << " and " << leftNode->value << " and " << rightNode->value  << std::endl;
         std::lock(nodeToDelete->mtx, leftNode->mtx, rightNode->mtx);
         std::lock_guard<std::mutex> lockOfNodeToDelete(nodeToDelete->mtx, std::adopt_lock);
         std::lock_guard<std::mutex> lockOfLeftNode(leftNode->mtx, std::adopt_lock);
-        std::lock_guard<std::mutex> lockRight(nodeToDelete->next->mtx, std::adopt_lock);
-        std::cout << "locked del: " << nodeToDelete->value << " and " << leftNode->value << " and " << nodeToDelete->next->value  << std::endl;
+        std::lock_guard<std::mutex> lockRight(rightNode->mtx, std::adopt_lock);
+//        std::cout << "locked del: " << nodeToDelete->value << " and " << leftNode->value << " and " << rightNode->value  << std::endl;
 
 
 

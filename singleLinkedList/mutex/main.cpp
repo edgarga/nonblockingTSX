@@ -62,6 +62,16 @@ int main(int numberOfArguments, char *args[]) {
     for (auto &t: threads)
         t.join();
 
+    std::cout << "inserting done!" << std::endl;
+
+//    std::vector<std::thread> tv;
+//    for (int i = 0; i < num_threads; i++) {
+//        tv.push_back(std::thread(deleteWorker, std::ref(list), num_elements, i));
+//    }
+//
+//    for (auto &t: tv)
+//        t.join();
+
     time_stop();
     time_print();
 

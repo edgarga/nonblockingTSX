@@ -14,6 +14,7 @@ List::List() {
  */
 bool List::insert(int key) {
     Node *newNode = new Node(key);
+
     Node *rightNode, *leftNode;
 
     do {
