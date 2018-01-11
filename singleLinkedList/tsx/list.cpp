@@ -28,42 +28,32 @@ bool List::insert(int key) {
         if (rightNode->value == key) return false;
 
         while (triesOfThisIteration < RETRIES_OF_ONE_ITERATION && absoluteTries < ABSOLUTE_RETRIES) {
-            //start transaction
-            //insert as if no other threads are there
-
-            //check if retry is possible or necessary
-            //if not => set triesOfThisIteration to max
-
-            //close transaction if necessary
-
-            //check if node was successful inserted
-            { /// critical Section
+            { /// start critical Section
                 LockElision eLock;
                 if ((status = eLock.startTransaction()) == _XBEGIN_STARTED) { /// check if transaction was started
-                    if (leftNode->next != rightNode)
+                    if (leftNode->next != rightNode) /// check if node were not change since search and start of transaction
                         continue;
-                    newNode->next = rightNode;
+
+                    newNode->next = rightNode; /// insert new node
                     leftNode->next = newNode;
                 }
-            }
+            } /// end critical section
 
-            if (status & _XABORT_RETRY) {
+            if (status & _XABORT_RETRY) { /// do nothing if can be retried
             } else {
-                triesOfThisIteration = RETRIES_OF_ONE_ITERATION; ///breaks
+                triesOfThisIteration = RETRIES_OF_ONE_ITERATION; /// new search will be initiated
             }
 
-            if (leftNode->next == newNode && newNode->next == rightNode) {
+            if (leftNode->next == newNode && newNode->next == rightNode) { /// return if insert was successful
                 return true;
             }
+
             triesOfThisIteration++;
             absoluteTries++;
 
         }
 
-        if (insertedNewNode) {
-//            std::cout << "A: " << triesOfThisIteration << " " << absoluteTries << std::endl;
-            return true;
-        } else if (absoluteTries >= ABSOLUTE_RETRIES) {
+        if (!insertedNewNode && absoluteTries >= ABSOLUTE_RETRIES) {
             //TODO: nonblocking insert algorithm goes here
         }
 
