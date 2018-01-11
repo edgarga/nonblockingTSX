@@ -1,7 +1,7 @@
 OUT			= linkedListRun
 CFLAGS 		= -Wall -g
 CPPFLAGS 	= $(CFLAGS) -std=c++11 -mrtm
-LIBS		= -lpthread 
+LIBS		= -lpthread
 CC			= gcc
 CPP			= g++
 
