@@ -95,7 +95,7 @@ bool List::insert(int key) {
  */
 Node *List::search(int searchKey, Node **leftNode) {
     Node *leftNextNode, *rightNode;
-
+ 
     do {
         Node *t = this->head;
         Node *tNext = this->head->next;
