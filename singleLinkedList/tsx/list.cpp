@@ -7,7 +7,6 @@
 
 #include <iostream>
 #include "list.h"
-#include "rTMLock.h"
 
 List::List() {
     this->head = new Node(-2);
@@ -38,49 +37,37 @@ bool List::insert(int key) {
             //close transaction if necessary
 
             //check if node was successful inserted
-            {
+            { /// critical Section
                 LockElision eLock;
-                if ((status = eLock.startTransaction()) == _XBEGIN_STARTED && rightNode->value != key) {
-                    //TODO: normal insert algorithm goes here
+                if ((status = eLock.startTransaction()) == _XBEGIN_STARTED) { /// check if transaction was started
+                    if (leftNode->next != rightNode)
+                        continue;
                     newNode->next = rightNode;
                     leftNode->next = newNode;
                 }
             }
-            if (leftNode->next == newNode && false)
-                std::cout << key << " " << leftNode->value << " " << leftNode->next->value << " "
-                          << rightNode->value << " " << status << " " << !status << " " << (status & _XABORT_RETRY)
-                          << " " << !(status & _XABORT_RETRY) << " " << ((leftNode->next == newNode) ? "==" : "!=")
-                          << std::endl;
+
             if (status & _XABORT_RETRY) {
             } else {
-                triesOfThisIteration = RETRIES_OF_ONE_ITERATION;
+                triesOfThisIteration = RETRIES_OF_ONE_ITERATION; ///breaks
             }
 
-            if (leftNode->next == newNode && newNode->next == rightNode) { //
-                std::cout << status << " " << !status << std::endl;
+            if (leftNode->next == newNode && newNode->next == rightNode) {
                 return true;
-//                insertedNewNode = true;
-//                break;
-
-//            if (_xtest()) {
-//                _xend();
-//            }
-
-
-                triesOfThisIteration++;
-                absoluteTries++;
-
             }
-
-            if (insertedNewNode) {
-//            std::cout << "A: " << triesOfThisIteration << " " << absoluteTries << std::endl;
-                return true;
-            } else if (absoluteTries >= ABSOLUTE_RETRIES) {
-                //TODO: nonblocking insert algorithm goes here
-            }
-
+            triesOfThisIteration++;
+            absoluteTries++;
 
         }
+
+        if (insertedNewNode) {
+//            std::cout << "A: " << triesOfThisIteration << " " << absoluteTries << std::endl;
+            return true;
+        } else if (absoluteTries >= ABSOLUTE_RETRIES) {
+            //TODO: nonblocking insert algorithm goes here
+        }
+
+
     } while (true);
 
 
@@ -95,7 +82,7 @@ bool List::insert(int key) {
  */
 Node *List::search(int searchKey, Node **leftNode) {
     Node *leftNextNode, *rightNode;
- 
+
     do {
         Node *t = this->head;
         Node *tNext = this->head->next;
