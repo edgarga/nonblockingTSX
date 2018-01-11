@@ -10,9 +10,10 @@
 
 class LockElision {
 public:
-    void startTransaction();
+    unsigned startTransaction();
     bool testTransaction();
     void endTransaction();
+    ~LockElision();
 };
 
 

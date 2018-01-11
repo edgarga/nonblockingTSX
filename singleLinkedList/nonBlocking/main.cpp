@@ -56,7 +56,7 @@ int main(int numberOfArguments, char *arguments[]) {
     time_start();
     for (int i = 0; i < num_threads; i++) {
         threadVector.push_back(std::thread(pushWorker, std::ref(list), num_elements, i));
-        threadVector.push_back(std::thread(deleteWorker, std::ref(list), num_elements, i));
+//        threadVector.push_back(std::thread(deleteWorker, std::ref(list), num_elements, i));
     }
 
     for (auto &t: threadVector)

@@ -19,6 +19,8 @@ public:
     Node* search(int key, Node **leftNode);
     bool insert(int key);
     bool del(int key);
+    void print();
+
 };
 
 
