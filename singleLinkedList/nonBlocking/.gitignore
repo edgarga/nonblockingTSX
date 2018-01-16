@@ -2,7 +2,7 @@
 *.o
 linkedListRun
 
-.idea
+.idea/
 .vscode/
 cmake-build-debug
 CMakteLists.txt

@@ -1,15 +1,17 @@
 #include <iostream>
 #include "node.h"
 
-Node::Node(){
-    this->key = -1;
-    this->next = nullptr;
-    this->markedToDelete = false;
-}
+//Node::Node(){
+//    this->key = -1;
+//    this->next = nullptr;
+//    this->marked = new int(1);
+//    this->markedToDelete = false;
+//}
 
-Node::Node(int key){
+Node::Node(int key, bool *ptr){
     this->key = key;
-    this->markedToDelete = false;
+    this->marked = ptr;
+    this->next = nullptr;
 }
 
 Node::~Node(){
