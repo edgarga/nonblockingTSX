@@ -20,7 +20,7 @@ bool List::insert(int key) {
     Node *rightNode, *leftNode;
 
     do {
-        rightNode = this->search(key, &leftNode, 9);
+        rightNode = this->search(key, &leftNode);
 
         if ((rightNode != this->tail) && (rightNode->key == key)) {
             return false;
@@ -40,7 +40,7 @@ bool List::insert(int key) {
  * @param leftNode
  * @return if key exists: the Node with the specified key, tail otherwise
  */
-Node *List::search(int searchKey, Node **leftNode, int threadId) {
+Node *List::search(int searchKey, Node **leftNode) {
     Node *leftNextNode, *rightNode;
 
     do {
@@ -94,11 +94,11 @@ bool List::contains(int key) {
  * @param searchKey
  * @return true if node marked successfully, false otherwise (i.e. because the key does not exist in the List)
  */
-bool List::del(int searchKey, int threadNum) {
+bool List::del(int searchKey) {
     Node *rightNode, *rightNextNode, *leftNode;
 
     do {
-        rightNode = search(searchKey, &leftNode, threadNum);
+        rightNode = search(searchKey, &leftNode);
         if ((rightNode == this->tail) || (rightNode->key != searchKey)) {
             return false;
         }
@@ -113,7 +113,7 @@ bool List::del(int searchKey, int threadNum) {
         }
     } while (true);
     if (!(leftNode->next.compare_exchange_weak(rightNode, rightNextNode))) {
-        rightNode = this->search(searchKey, &leftNode, threadNum);
+        rightNode = this->search(searchKey, &leftNode);
     }
 
     return true;

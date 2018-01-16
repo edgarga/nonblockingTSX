@@ -15,11 +15,11 @@ public:
 
     bool insert(int key);
 
-    bool del(int searchKey, int threadNum);
+    bool del(int searchKey);
 
     bool contains(int key);
 
-    Node *search(int key, Node **leftNode, int threadId);
+    Node *search(int key, Node **leftNode);
 
     void print();
 };

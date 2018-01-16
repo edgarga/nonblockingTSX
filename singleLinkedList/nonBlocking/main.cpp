@@ -37,7 +37,7 @@ void deleteWorker(List &list, int deleteCount, int threadId) {
 
         if (useSome)
             value = some;
-        if (list.del(value, threadId)) {
+        if (list.del(value)) {
             deleteCountArray[threadId]++;
         }
 
