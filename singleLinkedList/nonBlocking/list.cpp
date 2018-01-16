@@ -27,8 +27,7 @@ bool List::insert(int key) {
         }
         newNode->next = rightNode;
 
-        if (leftNode->next.compare_exchange_weak(rightNode,
-                                                 newNode)) {
+        if (leftNode->next.compare_exchange_weak(rightNode, newNode)) {
             return true;
         }
     } while (true);
@@ -82,7 +81,7 @@ Node *List::search(int searchKey, Node **leftNode) {
 bool List::contains(int key) {
     Node *rightNode, *leftNode;
 
-    rightNode = search(key, &leftNode, 8);
+    rightNode = search(key, &leftNode);
     if ((rightNode == this->tail) || (rightNode->key != key))
         return false;
     else
