@@ -12,7 +12,7 @@ class LockElision {
 public:
     unsigned startTransaction();
     bool testTransaction();
-    void endTransaction();
+    bool endTransaction();
     ~LockElision();
 };
 

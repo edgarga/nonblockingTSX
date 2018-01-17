@@ -10,17 +10,22 @@
 
 class List {
 public:
-    Node* head;
-    Node* tail;
+    Node *head;
+    Node *tail;
+    std::atomic<bool *> toTrue;
+    std::atomic<bool *> toFalse;
 
     List();
+
     ~List();
 
-    Node* search(int key, Node **leftNode);
     bool insert(int key);
-    bool del(int key);
-    void print();
 
+    bool del(int searchKey);
+
+    Node *search(int key, Node **leftNode);
+
+    void print();
 };
 
 

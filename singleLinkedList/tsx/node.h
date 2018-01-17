@@ -6,16 +6,19 @@
 #define MUTEX_NODE_H
 
 
+#include <atomic>
 #include "lockElision.h"
 
 class Node {
 public:
-    int value;
-    Node *next;
-    bool markedToDelete;
+    int key;
+    std::atomic<bool *> marked;
+    std::atomic<Node *> next;
 
-    Node();
-    Node(int val);
+//    Node();
+
+    Node(int key, bool *ptr);
+
     ~Node();
 
 };

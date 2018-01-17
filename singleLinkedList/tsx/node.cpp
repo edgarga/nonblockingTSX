@@ -4,16 +4,12 @@
 
 #include "node.h"
 
-Node::Node() {
+Node::Node(int key, bool *ptr){
+    this->key = key;
+    this->marked = ptr;
     this->next = nullptr;
-    this->value = -10;
-    this->markedToDelete = false;
 }
 
-Node::Node(int val) {
-    this->value = val;
-    this->next = nullptr;
-    this->markedToDelete = false;
-}
+Node::~Node(){
 
-Node::~Node() {}
+}

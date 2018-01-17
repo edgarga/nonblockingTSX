@@ -24,9 +24,14 @@ bool LockElision::testTransaction() {
     return returnVal;
 }
 
-void LockElision::endTransaction() {
-    if (_xtest())
+bool LockElision::endTransaction() {
+    if (_xtest()){
+
         _xend();
+        return true;
+    }else{
+        return false;
+    }
 }
 
 LockElision::~LockElision() {

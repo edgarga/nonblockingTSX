@@ -176,7 +176,7 @@ int main(int numberOfArguments, char *arguments[]) {
     }
     std::cout << "count: " << count << " | countByThreads: " << pushCount - delCount << std::endl;
     std::cout << "inserts: " << pushCount << " | deletes: " << delCount << std::endl;
-//    time_print();
+    time_print();
 
 
 //   list.insert(1);

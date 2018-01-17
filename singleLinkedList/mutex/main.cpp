@@ -48,55 +48,123 @@ int main(int numberOfArguments, char *args[]) {
         deleteCountArray[i] = 0;
     }
 
-    time_start();
-
-    List list;
-
-
-    std::vector<std::thread> threads;
-    for (int i = 0; i < num_threads; i++) {
-        threads.push_back(std::thread(insertWorker, std::ref(list), num_elements, i));
-        threads.push_back(std::thread(deleteWorker, std::ref(list), num_elements, i));
-    }
-
-    for (auto &t: threads)
-        t.join();
-
-    std::cout << "inserting done!" << std::endl;
-
-//    std::vector<std::thread> tv;
+//    time_start();
+//
+//    List list;
+//
+//
+//    std::vector<std::thread> threads;
 //    for (int i = 0; i < num_threads; i++) {
-//        tv.push_back(std::thread(deleteWorker, std::ref(list), num_elements, i));
+//        threads.push_back(std::thread(insertWorker, std::ref(list), num_elements, i));
+//        threads.push_back(std::thread(deleteWorker, std::ref(list), num_elements, i));
 //    }
 //
-//    for (auto &t: tv)
+//    for (auto &t: threads)
 //        t.join();
-
-    time_stop();
-    time_print();
-
-
-    int elementCount = 0;
-    Node *curr = list.head->next;
-    while (curr != list.tail) {
-        elementCount++;
-
-        curr = curr->next;
-    }
-
-    int elementsInserted = 0;
-    int elementsDeleted = 0;
-    for (int i = 0; i < num_threads; i++) {
-        elementsInserted += insertCountArray[i];
-        elementsDeleted += deleteCountArray[i];
-    }
-
-    std::cout << "elements in List: " << elementCount << std::endl;
-    std::cout << "element pushed by threads - deletes: " << elementsInserted - elementsDeleted << std::endl;
-    std::cout << "element pushed by threads: " << elementsInserted << std::endl;
-    std::cout << "element deleted by threads: " << elementsDeleted << std::endl;
+//
+//    std::cout << "inserting done!" << std::endl;
+//
+////    std::vector<std::thread> tv;
+////    for (int i = 0; i < num_threads; i++) {
+////        tv.push_back(std::thread(deleteWorker, std::ref(list), num_elements, i));
+////    }
+////
+////    for (auto &t: tv)
+////        t.join();
+//
+//    time_stop();
+//    time_print();
+//
+//
+//    int elementCount = 0;
+//    Node *curr = list.head->next;
+//    while (curr != list.tail) {
+//        elementCount++;
+//
+//        curr = curr->next;
+//    }
+//
+//    int elementsInserted = 0;
+//    int elementsDeleted = 0;
+//    for (int i = 0; i < num_threads; i++) {
+//        elementsInserted += insertCountArray[i];
+//        elementsDeleted += deleteCountArray[i];
+//    }
+//
+//    std::cout << "elements in List: " << elementCount << std::endl;
+//    std::cout << "element pushed by threads - deletes: " << elementsInserted - elementsDeleted << std::endl;
+//    std::cout << "element pushed by threads: " << elementsInserted << std::endl;
+//    std::cout << "element deleted by threads: " << elementsDeleted << std::endl;
 
 //    list.print();
+
+
+    int pushCount = 0;
+    int delCount = 0;
+    time_start();
+    for (int j = 0; j < num_elements; j++) {
+//        std::cout << "go for: " << some << std::endl;
+
+
+        if (list.insert(some))
+            pushCount++;
+//        list.print();
+        std::vector<std::thread> tv;
+        for (int i = 0; i < num_threads; i++) {
+            tv.push_back(std::thread(pushWorker, std::ref(list), num_elements, i));
+            tv.push_back(std::thread(deleteWorker, std::ref(list), num_elements, i));
+        }
+        for (auto &t: tv)
+            t.join();
+//        list.numTreads = 0;
+//        list.lastThread = -1;
+//        list.print();
+//        std::cout << "finish for: " << some << std::endl;
+        some++;
+//        if(list.toFalse == list.toTrue)
+//            std::cout << "very bad!########################" <<  " true: " << *list.toTrue << "; false: " << *list.toFalse << std::endl;
+    }
+
+
+//    for(int i= 0; i<100; i++){
+//        list.insert(i);
+//    }
+//    list.del(0,10);
+//
+//    Node* x= list.head;
+//    while (x != list.tail){
+//        if(x->marked != list.toTrue && x->marked != list.toFalse)
+//        {
+//            std::cout << "asdfgh " << x->key << std::endl;
+//
+//        }
+//        x = x->next;
+//    }
+
+    time_stop();
+
+    /**
+     * calculate the successful insert and delete operations
+     */
+    for (int x = 0; x < num_threads; x++) {
+        pushCount += pushCountArray[x];
+        delCount += deleteCountArray[x];
+    }
+
+    std::cout << "push - del calc" << std::endl;
+
+    /**
+     * traverse the List and count the actual present Nodes
+     */
+    int count = 0;
+    Node *curr = list.head;
+    while (curr->next != list.tail) {
+        if (curr->marked == list.toFalse)
+            count++;
+        curr = curr->next;
+    }
+    std::cout << "count: " << count << " | countByThreads: " << pushCount - delCount << std::endl;
+    std::cout << "inserts: " << pushCount << " | deletes: " << delCount << std::endl;
 
     return 0;
 }
