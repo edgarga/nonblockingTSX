@@ -14,18 +14,23 @@ public:
     Node *tail;
     std::atomic<bool *> toTrue;
     std::atomic<bool *> toFalse;
+    int *insertsByNonBlock, *insertsByTSX, *deletesByNonBlock, *deletesByTSX;
+    long long *absoluteTriesDeleteTSX, *absoluteTriesInsertTSX;
 
     List();
 
     ~List();
 
-    bool insert(int key);
+    bool insert(int key, int threadId);
 
-    bool del(int searchKey);
+    bool del(int searchKey, int threadId);
+    bool delNonBlocok(int searchKey);
 
     Node *search(int key, Node **leftNode);
 
+
     void print();
+    void printStats();
 };
 
 
