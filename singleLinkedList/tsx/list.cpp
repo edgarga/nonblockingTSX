@@ -2,8 +2,11 @@
 // Created by edgar on 10.01.18.
 //
 
-#define ABSOLUTE_RETRIES 10000
-#define RETRIES_OF_ONE_ITERATION 1000
+#define INSERT_ABSOLUTE_RETRIES 50
+#define INSERT_RETRIES_OF_ONE_ITERATION 2
+
+#define DELETE_ABSOLUTE_RETRIES 50
+#define DELETE_RETRIES_OF_ONE_ITERATION 2
 
 #include <iostream>
 #include "list.h"
@@ -28,7 +31,7 @@ bool List::insert(int key, int threadId) {
 
         if (rightNode->key == key) return false;
 
-        while (triesOfThisIteration < RETRIES_OF_ONE_ITERATION && absoluteTries < ABSOLUTE_RETRIES) {
+        while (triesOfThisIteration < INSERT_RETRIES_OF_ONE_ITERATION && absoluteTries < INSERT_ABSOLUTE_RETRIES) {
             triesOfThisIteration++;
             absoluteTries++;
 //            { /// start critical Section
@@ -44,7 +47,7 @@ bool List::insert(int key, int threadId) {
 //            } /// end critical section
 
             if ((eLock.endTransaction() && status == _XBEGIN_STARTED)
-               && (leftNode->next == newNode && newNode->next == rightNode)
+//                && (leftNode->next == newNode && newNode->next == rightNode)
                     ) { /// return if insert was successful
                 if (threadId >= 0) {
                     this->absoluteTriesInsertTSX[threadId] += absoluteTries;
@@ -54,13 +57,13 @@ bool List::insert(int key, int threadId) {
             }
             if (status & _XABORT_RETRY) { /// do nothing if can be retried
             } else {
-                triesOfThisIteration = RETRIES_OF_ONE_ITERATION; /// new search will be initiated
+                triesOfThisIteration = INSERT_RETRIES_OF_ONE_ITERATION; /// new search will be initiated
             }
 
 
         }
 
-        if (absoluteTries >= ABSOLUTE_RETRIES) {
+        if (absoluteTries >= INSERT_ABSOLUTE_RETRIES) {
 //            std::cout << "inserting via nonBlocking" << std::endl;
             rightNode = this->search(key, &leftNode);
 
@@ -166,7 +169,7 @@ bool List::del(int searchKey, int threadId) {
         if (rightNode == this->tail || rightNode->key != searchKey) return false;
 //        std::cout << "s: " << searchKey << " g: " << rightNode->key << " at: " << absoluteTries << std::endl;
         rightNextNode = rightNode->next;
-        while (triesOfThisIteration < RETRIES_OF_ONE_ITERATION && absoluteTries < ABSOLUTE_RETRIES) {
+        while (triesOfThisIteration < DELETE_RETRIES_OF_ONE_ITERATION && absoluteTries < DELETE_ABSOLUTE_RETRIES) {
             triesOfThisIteration++;
             absoluteTries++;
 //            {/// try with TSX
@@ -174,7 +177,7 @@ bool List::del(int searchKey, int threadId) {
             LockElision eLock;
             if ((status = eLock.startTransaction()) == _XBEGIN_STARTED) { /// check if transaction was started
                 if (leftNode->next != rightNode || rightNode->next !=
-                                                   rightNextNode) { /// check if node were not change since search and start of transaction
+                                                   rightNextNode || *rightNode->marked == true) { /// check if node were not change since search and start of transaction
 
                     break;
                 }
@@ -183,8 +186,10 @@ bool List::del(int searchKey, int threadId) {
                 leftNode->next = rightNextNode;
             }
 //            }
-            if ((eLock.endTransaction() && status == _XBEGIN_STARTED)
-                && (leftNode->next == rightNextNode)
+            if (
+                    (eLock.endTransaction() && status == _XBEGIN_STARTED)
+//                &&
+//                            (leftNode->next == rightNextNode)
                     ) {
 //            if (status == 0xffffffff || leftNode->next == rightNextNode) { /// return if insert was successful
                 if (threadId >= 0) {
@@ -193,15 +198,16 @@ bool List::del(int searchKey, int threadId) {
                 }
                 return true;
             }
+
             if (status & _XABORT_RETRY) { /// do nothing if can be retried
             } else {
-                triesOfThisIteration = RETRIES_OF_ONE_ITERATION; /// new search will be initiated
+                triesOfThisIteration = DELETE_RETRIES_OF_ONE_ITERATION; /// new search will be initiated
             }
 
 
         }
 
-        if (absoluteTries >= ABSOLUTE_RETRIES) {
+        if (absoluteTries >= DELETE_ABSOLUTE_RETRIES) {
 
 //            std::cout << "deleting via nonBlock" << std::endl;
 
@@ -233,8 +239,8 @@ bool List::delNonBlocok(int searchKey) {
 }
 
 void List::printStats() {
-    int absoluteSuccessfulInserts = 0, absoluteSuccessfulDeletes = 0;
-    long long absoluteTSXInsertTries = 0, absoluteTSXDeleteTries = 0;
+//    int absoluteSuccessfulInserts = 0, absoluteSuccessfulDeletes = 0;
+//    long long absoluteTSXInsertTries = 0, absoluteTSXDeleteTries = 0;
 }
 
 
