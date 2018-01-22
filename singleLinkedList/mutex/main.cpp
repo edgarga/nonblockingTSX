@@ -1,114 +1,83 @@
-//
-// Created by edgar on 07.01.18.
-//
 #include <iostream>
 #include <thread>
 #include <vector>
 #include "list.h"
 #include "mcp.h"
 
-int upperLimit;
-int *insertCountArray;
-int *deleteCountArray;
+/**
+ * arrays to count successful operations
+ */
+int *pushCountArray, *deleteCountArray;
 
-void insertWorker(List &list, int numberOfInserts, int threadId) {
-    for (int i = 0; i < numberOfInserts; i++) {
-        int valueToInsert = rand() % upperLimit;
-//        std::cout << threadId << " inserting: " << valueToInsert<<  " " << upperLimit << std::endl;
-        if (list.insert(valueToInsert)) {
+/**
+ * highest Number that can be present in the List
+ */
+int upperLimit = 0;
 
+int some = 0;
+bool useSome = false;
 
-            insertCountArray[threadId]++;
+void pushWorker(List &list, int pushCount, int threadId) {
+
+    for (int i = 0; i < pushCount; i++) {
+        int value = rand() % upperLimit;
+        if (useSome)
+            value = some;
+        if (list.insert(value)) {
+            pushCountArray[threadId]++;
+
         }
     }
 }
 
-void deleteWorker(List &list, int numberOfDeletes, int threadId) {
-    for (int i = 0; i < numberOfDeletes; i++) {
-        int valueToDelete = rand() % upperLimit;
-//        std::cout << threadId << " inserting: " << valueToInsert<<  " " << upperLimit << std::endl;
-        if (list.del(valueToDelete)) {
 
+void deleteWorker(List &list, int deleteCount, int threadId) {
+    for (int i = 0; i < deleteCount; i++) {
+        int value = rand() % upperLimit;
 
+        if (useSome)
+            value = some;
+        if (list.del(value)) {
             deleteCountArray[threadId]++;
         }
+
     }
 }
 
-
-int main(int numberOfArguments, char *args[]) {
-    mcp_init(numberOfArguments, args);
-    insertCountArray = new int[num_threads];
-    deleteCountArray = new int[num_threads];
+int main(int numberOfArguments, char *arguments[]) {
+    mcp_init(numberOfArguments, arguments);
 
     upperLimit = num_elements;
 
-    for (int i = 0; i < num_threads; i++) {
-        insertCountArray[i] = 0;
-        deleteCountArray[i] = 0;
+    /// initialize resultChecking arrays
+    pushCountArray = new int[num_threads];
+    deleteCountArray = new int[num_threads];
+    for (int j = 0; j < num_threads; j++) {
+        pushCountArray[j] = 0;
+        deleteCountArray[j] = 0;
     }
 
-//    time_start();
-//
-//    List list;
-//
-//
-//    std::vector<std::thread> threads;
-//    for (int i = 0; i < num_threads; i++) {
-//        threads.push_back(std::thread(insertWorker, std::ref(list), num_elements, i));
-//        threads.push_back(std::thread(deleteWorker, std::ref(list), num_elements, i));
-//    }
-//
-//    for (auto &t: threads)
-//        t.join();
-//
-//    std::cout << "inserting done!" << std::endl;
-//
-////    std::vector<std::thread> tv;
-////    for (int i = 0; i < num_threads; i++) {
-////        tv.push_back(std::thread(deleteWorker, std::ref(list), num_elements, i));
-////    }
-////
-////    for (auto &t: tv)
-////        t.join();
-//
-//    time_stop();
-//    time_print();
-//
-//
-//    int elementCount = 0;
-//    Node *curr = list.head->next;
-//    while (curr != list.tail) {
-//        elementCount++;
-//
-//        curr = curr->next;
-//    }
-//
-//    int elementsInserted = 0;
-//    int elementsDeleted = 0;
-//    for (int i = 0; i < num_threads; i++) {
-//        elementsInserted += insertCountArray[i];
-//        elementsDeleted += deleteCountArray[i];
-//    }
-//
-//    std::cout << "elements in List: " << elementCount << std::endl;
-//    std::cout << "element pushed by threads - deletes: " << elementsInserted - elementsDeleted << std::endl;
-//    std::cout << "element pushed by threads: " << elementsInserted << std::endl;
-//    std::cout << "element deleted by threads: " << elementsDeleted << std::endl;
+    /// start the test
+    List list;
+//    list.insertsByNonBlock = new int[num_threads];
+//    list.insertsByTSX = new int[num_threads];
+//    list.deletesByNonBlock = new int[num_threads];
+//    list.deletesByTSX = new int[num_threads];
+//    list.absoluteTriesInsertTSX = new long long[num_threads];
+//    list.absoluteTriesDeleteTSX = new long long[num_threads];
 
-//    list.print();
 
+    useSome = true;
+
+    list.print();
 
     int pushCount = 0;
     int delCount = 0;
+
     time_start();
+
     for (int j = 0; j < num_elements; j++) {
-//        std::cout << "go for: " << some << std::endl;
 
-
-        if (list.insert(some))
-            pushCount++;
-//        list.print();
         std::vector<std::thread> tv;
         for (int i = 0; i < num_threads; i++) {
             tv.push_back(std::thread(pushWorker, std::ref(list), num_elements, i));
@@ -116,32 +85,16 @@ int main(int numberOfArguments, char *args[]) {
         }
         for (auto &t: tv)
             t.join();
-//        list.numTreads = 0;
-//        list.lastThread = -1;
-//        list.print();
-//        std::cout << "finish for: " << some << std::endl;
+        if(list.del(some))
+            delCount++;
         some++;
-//        if(list.toFalse == list.toTrue)
-//            std::cout << "very bad!########################" <<  " true: " << *list.toTrue << "; false: " << *list.toFalse << std::endl;
     }
 
 
-//    for(int i= 0; i<100; i++){
-//        list.insert(i);
-//    }
-//    list.del(0,10);
-//
-//    Node* x= list.head;
-//    while (x != list.tail){
-//        if(x->marked != list.toTrue && x->marked != list.toFalse)
-//        {
-//            std::cout << "asdfgh " << x->key << std::endl;
-//
-//        }
-//        x = x->next;
-//    }
+
 
     time_stop();
+//    list.print();
 
     /**
      * calculate the successful insert and delete operations
@@ -156,15 +109,50 @@ int main(int numberOfArguments, char *args[]) {
     /**
      * traverse the List and count the actual present Nodes
      */
-    int count = 0;
+    int count = 0, absCount = 0;
     Node *curr = list.head;
     while (curr->next != list.tail) {
-        if (curr->marked == list.toFalse)
+//        if (*curr->marked == false)
             count++;
+        absCount++;
         curr = curr->next;
     }
-    std::cout << "count: " << count << " | countByThreads: " << pushCount - delCount << std::endl;
+    std::cout << "Nodes in List: " << count << " | countByThreads: " << pushCount - delCount
+              << std::endl;
     std::cout << "inserts: " << pushCount << " | deletes: " << delCount << std::endl;
+    time_print();
+
+
+
+//    long long absoluteSuccessfulInsertsByTSX = 0, absoluteSuccessfulDeletesByTSX = 0;
+//    long long absoluteSuccessfulInsertsByNonBlock = 0, absoluteSuccessfulDeletesByNonBlock = 0;
+//    long long absoluteTSXInsertTries = 0, absoluteTSXDeleteTries = 0;
+//
+//    for (int i = 0; i < num_threads; i++) {
+//        absoluteSuccessfulInsertsByTSX += list.insertsByTSX[i];
+//        absoluteSuccessfulDeletesByTSX += list.deletesByTSX[i];
+//
+//        absoluteSuccessfulInsertsByNonBlock += list.insertsByNonBlock[i];
+//        absoluteSuccessfulDeletesByNonBlock += list.deletesByNonBlock[i];
+//
+//        absoluteTSXInsertTries += list.absoluteTriesInsertTSX[i];
+//        absoluteTSXDeleteTries += list.absoluteTriesDeleteTSX[i];
+//    }
+//
+//
+//    double a = static_cast<double>(absoluteTSXInsertTries) / static_cast<double> (absoluteSuccessfulInsertsByTSX);
+//    double b = static_cast<double>(absoluteTSXDeleteTries) / static_cast<double> (absoluteSuccessfulDeletesByTSX);
+//
+//    std::cout << "nonBlock inserts: " << absoluteSuccessfulInsertsByNonBlock << std::endl;
+//    std::cout << "tsx inserts: " << absoluteSuccessfulInsertsByTSX << std::endl;
+//    std::cout << "tsx insert tries absolute: " << absoluteTSXInsertTries << std::endl;
+//    std::cout << "tries per successful tsx insert: " << a << std::endl;
+//    std::cout << std::endl;
+//    std::cout << "nonBlock deletes: " << absoluteSuccessfulDeletesByNonBlock << std::endl;
+//    std::cout << "tsx deletes: " << absoluteSuccessfulDeletesByTSX << std::endl;
+//    std::cout << "tsx delete tries absolute: " << absoluteTSXDeleteTries << std::endl;
+//    std::cout << "tries per successful tsx delete: " << b << std::endl;
 
     return 0;
 }
+

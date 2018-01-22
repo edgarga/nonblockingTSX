@@ -117,8 +117,8 @@ int main(int numberOfArguments, char *arguments[]) {
 //        std::cout << "go for: " << some << std::endl;
 
 
-        if (list.insert(some))
-            pushCount++;
+//        if (list.insert(some))
+//            pushCount++;
 //        list.print();
         std::vector<std::thread> tv;
         for (int i = 0; i < num_threads; i++) {
@@ -127,6 +127,10 @@ int main(int numberOfArguments, char *arguments[]) {
         }
         for (auto &t: tv)
             t.join();
+
+	if(list.del(some))
+		delCount++;
+
 //        list.numTreads = 0;
 //        list.lastThread = -1;
 //        list.print();

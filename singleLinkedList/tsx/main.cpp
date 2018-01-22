@@ -49,7 +49,7 @@ int main(int numberOfArguments, char *arguments[]) {
 
     upperLimit = num_elements;
 
-//    initialize resultChecking arrays
+    /// initialize resultChecking arrays
     pushCountArray = new int[num_threads];
     deleteCountArray = new int[num_threads];
     for (int j = 0; j < num_threads; j++) {
@@ -57,9 +57,7 @@ int main(int numberOfArguments, char *arguments[]) {
         deleteCountArray[j] = 0;
     }
 
-    /**
-     * start the test
-     */
+    /// start the test
     List list;
     list.insertsByNonBlock = new int[num_threads];
     list.insertsByTSX = new int[num_threads];
@@ -80,9 +78,6 @@ int main(int numberOfArguments, char *arguments[]) {
 
     for (int j = 0; j < num_elements; j++) {
 
-
-//        if (list.insert(some,-2))
-//            pushCount++;
         std::vector<std::thread> tv;
         for (int i = 0; i < num_threads; i++) {
             tv.push_back(std::thread(pushWorker, std::ref(list), num_elements, i));
@@ -90,8 +85,8 @@ int main(int numberOfArguments, char *arguments[]) {
         }
         for (auto &t: tv)
             t.join();
-//        if(list.del(some, -1))
-//            delCount++;
+        if(list.del(some, -1))
+            delCount++;
         some++;
     }
 
@@ -128,31 +123,6 @@ int main(int numberOfArguments, char *arguments[]) {
     time_print();
 
 
-//    unsigned status;
-//    unsigned end;
-//
-//    int tsxT = 123;
-//    status = _xbegin();
-//    tsxT = 2222;
-//    std::cout << "asdf" << std::endl;
-//    if (_xtest())
-//        _xend();
-//    std::cout << "tsxT: " << tsxT << std::endl;
-////    _xabort(0xff);
-//    unsigned ze = status & _XABORT_RETRY;
-//    std::cout << "_XABORT_RETRY: " << _XABORT_RETRY << std::endl
-//              << "status: " << status << std::endl
-//              << "!status: " << !status << std::endl
-//              << "!(status & _XABORT_RETRY): " << !(status & _XABORT_RETRY) << std::endl
-//              << "(status & _XABORT_RETRY): " << (status & _XABORT_RETRY) << std::endl
-//              << "status & _XABORT_RETRY: " << ze << std::endl
-//              << "_XBEGIN: " << _XBEGIN_STARTED << std::endl
-//              << "_XBEGIN == status: " << (status == _XBEGIN_STARTED ? "true" : "false") << std::endl;
-
-//   list.insert(1);
-//
-//
-//    list.print();
 
     long long absoluteSuccessfulInsertsByTSX = 0, absoluteSuccessfulDeletesByTSX = 0;
     long long absoluteSuccessfulInsertsByNonBlock = 0, absoluteSuccessfulDeletesByNonBlock = 0;
@@ -173,11 +143,6 @@ int main(int numberOfArguments, char *arguments[]) {
     double a = static_cast<double>(absoluteTSXInsertTries) / static_cast<double> (absoluteSuccessfulInsertsByTSX);
     double b = static_cast<double>(absoluteTSXDeleteTries) / static_cast<double> (absoluteSuccessfulDeletesByTSX);
 
-
-//    std::cout << std::endl << std::endl;
-//    std::cout << "inserts: " + absoluteSuccessfulInsertsByTSX + absoluteSuccessfulInsertsByNonBlock << std::endl;
-//    std::cout << "deletes: " + absoluteSuccessfulDeletesByTSX + absoluteSuccessfulDeletesByNonBlock << std::endl;
-//    std::cout << std::endl;
     std::cout << "nonBlock inserts: " << absoluteSuccessfulInsertsByNonBlock << std::endl;
     std::cout << "tsx inserts: " << absoluteSuccessfulInsertsByTSX << std::endl;
     std::cout << "tsx insert tries absolute: " << absoluteTSXInsertTries << std::endl;
