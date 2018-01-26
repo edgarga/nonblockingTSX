@@ -2,10 +2,8 @@
 #include "list.h"
 
 List::List() {
-    this->toTrue = new bool(true);
-    this->toFalse = new bool(false);
-    this->head = new Node(-3, this->toFalse);
-    this->tail = new Node(-1, this->toFalse);
+    this->head = new Node(-3);
+    this->tail = new Node(-1);
     this->head->next = this->tail;
 }
 
@@ -15,7 +13,7 @@ List::List() {
  * @return true if insertion was successful, false otherwise (i.e. because key already exists)
  */
 bool List::insert(int key) {
-    Node *newNode = new Node(key, this->toFalse);
+    Node *newNode = new Node(key);
 
     Node *rightNode, *leftNode;
 
@@ -33,6 +31,34 @@ bool List::insert(int key) {
     } while (true);
 }
 
+bool List::isMarkedPtr(Node *node) {
+    if (node < this->head) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+Node *List::getMarkedPtr(Node *node) {
+    Node *returnNode = node;
+    if (isMarkedPtr(returnNode)) {
+        return returnNode;
+    } else {
+        returnNode -= 0x006000000000;
+        return returnNode;
+    }
+}
+
+Node *List::getUnmarkedPtr(Node *node) {
+    Node *returnNode = node;
+    if (!isMarkedPtr(returnNode)) {
+        return returnNode;
+    } else {
+        returnNode += 0x006000000000;
+        return returnNode;
+    }
+}
+
 /**
  * searches the the Node with the specified key and deletes marked Nodes
  * @param searchKey
@@ -47,18 +73,19 @@ Node *List::search(int searchKey, Node **leftNode) {
         Node *tNext = this->head->next;
 //        1: Find left and right nodes
         do {
-            if (*t->marked == false) {
+            if (!isMarkedPtr(tNext)) {
                 (*leftNode) = t;
                 leftNextNode = tNext;
             }
-            t = tNext;
+            t = getUnmarkedPtr(tNext);
             if (t == this->tail) break;
             tNext = t->next;
-        } while (*t->marked == true || (t->key < searchKey));
+        } while (isMarkedPtr(t) || (t->key < searchKey));
         rightNode = t;
+
 //        2: Check Nodes are adjacent
         if (leftNextNode == rightNode) {
-            if ((rightNode != this->tail) && *rightNode->marked == true) {
+            if ((rightNode != this->tail) && isMarkedPtr(rightNode->next)) {
                 continue;
             } else {
                 return rightNode;
@@ -66,7 +93,7 @@ Node *List::search(int searchKey, Node **leftNode) {
         }
         if ((*leftNode)->next.compare_exchange_weak(leftNextNode,
                                                     rightNode)) {
-            if ((rightNode != this->tail) && *rightNode->marked == true) {
+            if ((rightNode != this->tail) && isMarkedPtr(rightNode)) {
                 //TODO: delete the node properly
                 continue;
             } else {
@@ -103,12 +130,9 @@ bool List::del(int searchKey) {
         }
         rightNextNode = rightNode->next;
 
-        if (*rightNode->marked != true) {
-            bool *one = this->toFalse;
-            bool *two = this->toTrue;
-            if (rightNode->marked.compare_exchange_weak(one, two)) {
+        if (!isMarkedPtr(rightNextNode)) {
+            if (rightNode->next.compare_exchange_weak(rightNextNode, getMarkedPtr(rightNextNode)))
                 break;
-            }
         }
     } while (true);
     if (!(leftNode->next.compare_exchange_weak(rightNode, rightNextNode))) {
@@ -130,19 +154,11 @@ void List::print() {
         else
             std::cout << "| " << currentNode->key << " |";
 
-        bool *is = currentNode->marked;
-        if (is == this->toFalse)
-            std::cout << "f";
-        if (is == this->toTrue)
-            std::cout << "t";
-        if (is != this->toFalse && is != this->toTrue)
-            std::cout << "o";
-
         if (currentNode->next != nullptr)
             std::cout << " -> ";
 
 
-        currentNode = currentNode->next;
+        currentNode = getUnmarkedPtr(currentNode->next);
     } while (currentNode->next != nullptr);
     std::cout << "tail";
     std::cout << std::endl;

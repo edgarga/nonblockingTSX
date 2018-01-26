@@ -8,9 +8,8 @@
 //    this->markedToDelete = false;
 //}
 
-Node::Node(int key, bool *ptr){
+Node::Node(int key){
     this->key = key;
-    this->marked = ptr;
     this->next = nullptr;
 }
 

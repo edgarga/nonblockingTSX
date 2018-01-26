@@ -174,9 +174,9 @@ int main(int numberOfArguments, char *arguments[]) {
     int count = 0;
     Node *curr = list.head;
     while (curr->next != list.tail) {
-        if (curr->marked == list.toFalse)
+        if (!list.isMarkedPtr(curr->next))
             count++;
-        curr = curr->next;
+        curr = list.getUnmarkedPtr(curr->next);
     }
     std::cout << "count: " << count << " | countByThreads: " << pushCount - delCount << std::endl;
     std::cout << "inserts: " << pushCount << " | deletes: " << delCount << std::endl;

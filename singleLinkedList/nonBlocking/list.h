@@ -6,8 +6,6 @@ class List {
 public:
     Node *head;
     Node *tail;
-    std::atomic<bool *> toTrue;
-    std::atomic<bool *> toFalse;
 
     List();
 
@@ -18,6 +16,10 @@ public:
     bool del(int searchKey);
 
     bool contains(int key);
+
+    bool isMarkedPtr(Node *node);
+    Node *getMarkedPtr(Node *node);
+    Node *getUnmarkedPtr(Node *node);
 
     Node *search(int key, Node **leftNode);
 

@@ -7,6 +7,9 @@ extern "C" {
 
 extern int num_elements;
 extern int num_threads;
+extern int doShort;
+extern int standardTest;
+extern int workbench;
 
 void mcp_init(int argc, char **argv);
 
