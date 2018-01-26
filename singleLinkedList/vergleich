@@ -2,7 +2,7 @@ Je 4 Threads für einfügen und löschen (= 8 threads insgesammt)
 Anzahl an Einfügeversuchen = n*n *t
 Anzahl an Löschversuchen = n*n* *t
 
--n 		mutex		nonblocking		tsx+Nonblock (absoluteTries: 50, tries: 5)
+-n 		mutex		nonblocking		tsx+Nonblock (absoluteTries: 50, tries p iteration: 5 )
 500		   1,2		  1,05			 0,4
 1000		  10,3		  4,7			 1,5
 1500		  42,6		 11,0			 3,3

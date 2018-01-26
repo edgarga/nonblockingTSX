@@ -2,37 +2,61 @@
 // Created by edgar on 10.01.18.
 //
 
-#define INSERT_ABSOLUTE_RETRIES 50
-#define INSERT_RETRIES_OF_ONE_ITERATION 2
-
-#define DELETE_ABSOLUTE_RETRIES 50
-#define DELETE_RETRIES_OF_ONE_ITERATION 2
-
 #include <iostream>
+#include <limits>
 #include "list.h"
 
 List::List() {
-    this->toTrue = new bool(true);
-    this->toFalse = new bool(false);
-    this->head = new Node(-3, this->toFalse);
-    this->tail = new Node(-1, this->toFalse);
+
+    this->absoluteTries_Insert = 50;
+    this->absoluteTries_Delete = 50;
+
+    this->head = new Node(-3);
+    this->tail = new Node(std::numeric_limits<int>::max());
     this->head->next = this->tail;
+}
+bool List::isMarkedPtr(size_t node) {
+    return (node & 1) != 0;
+}
+
+bool List::isMarkedPtr(Node *node) {
+    return isMarkedPtr((size_t) node);
+}
+
+Node *List::getMarkedPtr(Node *node) {
+    size_t ptr = (size_t) node;
+    if (isMarkedPtr(ptr)) {
+        return (Node *) (ptr);
+    } else {
+        ptr = ptr | 1;
+        return (Node *) ptr;
+    }
+}
+
+Node *List::getUnmarkedPtr(Node *node) {
+    size_t ptr = (size_t) node;
+    if (!isMarkedPtr(ptr)) {
+        return (Node *) ptr;
+    } else {
+        ptr = ptr & (std::numeric_limits<std::size_t>::max() - 1);
+        return (Node *) ptr;
+    }
 }
 
 bool List::insert(int key, int threadId) {
-    Node *newNode = new Node(key, this->toFalse);
+    Node *newNode = new Node(key);
     Node *rightNode, *leftNode;
 
     int absoluteTries = 0;
     do {
-        int triesOfThisIteration = 0;
+
         rightNode = this->search(key, &leftNode);
         unsigned status;
 
         if (rightNode->key == key) return false;
 
-        while (triesOfThisIteration < INSERT_RETRIES_OF_ONE_ITERATION && absoluteTries < INSERT_ABSOLUTE_RETRIES) {
-            triesOfThisIteration++;
+        while (absoluteTries < this->absoluteTries_Insert) {
+
             absoluteTries++;
 //            { /// start critical Section
             LockElision eLock;
@@ -57,24 +81,20 @@ bool List::insert(int key, int threadId) {
             }
             if (status & _XABORT_RETRY) { /// do nothing if can be retried
             } else {
-                triesOfThisIteration = INSERT_RETRIES_OF_ONE_ITERATION; /// new search will be initiated
+                break; /// new search will be initiated
             }
 
 
         }
 
-        if (absoluteTries >= INSERT_ABSOLUTE_RETRIES) {
-//            std::cout << "inserting via nonBlocking" << std::endl;
-            rightNode = this->search(key, &leftNode);
-
+        if (absoluteTries >= this->absoluteTries_Insert) {
             if ((rightNode != this->tail) && (rightNode->key == key)) {
                 return false;
             }
             newNode->next = rightNode;
 
             if (leftNode->next.compare_exchange_weak(rightNode, newNode)) {
-                if (threadId >= 0)
-                    this->insertsByNonBlock[threadId]++;
+                this->insertsByNonBlock[threadId]++;
                 return true;
             }
         }
@@ -94,26 +114,28 @@ bool List::insert(int key, int threadId) {
  */
 Node *List::search(int searchKey, Node **leftNode) {
     Node *leftNextNode, *rightNode;
-
+    int i = 0;
     do {
-//        std::cout << "doSearch" << std::endl;
         Node *t = this->head;
         Node *tNext = this->head->next;
 //        1: Find left and right nodes
         do {
-            if (*t->marked == false) {
+            i++;
+            if (!isMarkedPtr(tNext)) {
                 (*leftNode) = t;
                 leftNextNode = tNext;
             }
-            t = tNext;
-            if (t == this->tail) break;
+            t = getUnmarkedPtr(tNext);
+            if (t == this->tail)
+                break;
             tNext = t->next;
-        } while (*t->marked == true || (t->key < searchKey));
-//        std::cout << t->key << std::endl;
+        } while (isMarkedPtr(tNext) ||
+                 (t->key < searchKey));
         rightNode = t;
+
 //        2: Check Nodes are adjacent
         if (leftNextNode == rightNode) {
-            if ((rightNode != this->tail) && *rightNode->marked == true) {
+            if ((rightNode != this->tail) && isMarkedPtr(rightNode->next)) {
                 continue;
             } else {
                 return rightNode;
@@ -121,7 +143,7 @@ Node *List::search(int searchKey, Node **leftNode) {
         }
         if ((*leftNode)->next.compare_exchange_weak(leftNextNode,
                                                     rightNode)) {
-            if ((rightNode != this->tail) && *rightNode->marked == true) {
+            if ((rightNode != this->tail) && isMarkedPtr(rightNode)) {
                 //TODO: delete the node properly
                 continue;
             } else {
@@ -142,12 +164,12 @@ void List::print() {
         if (currentNode == this->head)
             std::cout << "head";
         else
-            std::cout << "| " << currentNode->key << " |";
+            std::cout << "| " << currentNode->key << (this->isMarkedPtr(currentNode->next) ? "X" : "") << " |";
 
         if (currentNode->next != nullptr)
             std::cout << " -> ";
 
-        currentNode = currentNode->next;
+        currentNode = this->getUnmarkedPtr(currentNode->next);
     } while (currentNode->next != nullptr);
     std::cout << "tail";
     std::cout << std::endl;
@@ -159,29 +181,27 @@ bool List::del(int searchKey, int threadId) {
 
     Node *rightNode, *rightNextNode, *leftNode;
 
-    int triesOfThisIteration = 0, absoluteTries = 0;
+    int  absoluteTries = 0;
 
     unsigned status;
 
     do {
-        triesOfThisIteration = 0;
         rightNode = search(searchKey, &leftNode);
         if (rightNode == this->tail || rightNode->key != searchKey) return false;
 //        std::cout << "s: " << searchKey << " g: " << rightNode->key << " at: " << absoluteTries << std::endl;
         rightNextNode = rightNode->next;
-        while (triesOfThisIteration < DELETE_RETRIES_OF_ONE_ITERATION && absoluteTries < DELETE_ABSOLUTE_RETRIES) {
-            triesOfThisIteration++;
+        while (absoluteTries < this->absoluteTries_Delete) {
             absoluteTries++;
 //            {/// try with TSX
-            bool *toT = this->toTrue;
             LockElision eLock;
             if ((status = eLock.startTransaction()) == _XBEGIN_STARTED) { /// check if transaction was started
                 if (leftNode->next != rightNode || rightNode->next !=
-                                                   rightNextNode || *rightNode->marked == true) { /// check if node were not change since search and start of transaction
+                                                   rightNextNode || this->isMarkedPtr(
+                        rightNode->next)) { /// check if node were not change since search and start of transaction
 
                     break;
                 }
-                rightNode->marked = toT;
+                rightNode->next = getMarkedPtr(rightNode->next);
                 rightNextNode = rightNode->next;
                 leftNode->next = rightNextNode;
             }
@@ -201,25 +221,20 @@ bool List::del(int searchKey, int threadId) {
 
             if (status & _XABORT_RETRY) { /// do nothing if can be retried
             } else {
-                triesOfThisIteration = DELETE_RETRIES_OF_ONE_ITERATION; /// new search will be initiated
+                break; /// new search will be initiated
             }
 
 
         }
 
-        if (absoluteTries >= DELETE_ABSOLUTE_RETRIES) {
-
-//            std::cout << "deleting via nonBlock" << std::endl;
-
+        if (absoluteTries >= this->absoluteTries_Delete) {
             if ((rightNode == this->tail) || (rightNode->key != searchKey)) {
                 return false;
             }
             rightNextNode = rightNode->next;
 
-            if (*rightNode->marked != true) {
-                bool *one = this->toFalse;
-                bool *two = this->toTrue;
-                if (rightNode->marked.compare_exchange_weak(one, two)) {
+            if (!isMarkedPtr(rightNextNode)) {
+                if (rightNode->next.compare_exchange_weak(rightNextNode, getMarkedPtr(rightNextNode))) {
                     break;
                 }
             }
@@ -234,9 +249,7 @@ bool List::del(int searchKey, int threadId) {
     return true;
 }
 
-bool List::delNonBlocok(int searchKey) {
-    return false;
-}
+
 
 void List::printStats() {
 //    int absoluteSuccessfulInserts = 0, absoluteSuccessfulDeletes = 0;

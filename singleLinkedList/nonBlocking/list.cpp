@@ -3,7 +3,7 @@
 
 List::List() {
     this->head = new Node(-3);
-    this->tail = new Node(-1);
+    this->tail = new Node(std::numeric_limits<int>::max());
     this->head->next = this->tail;
 }
 
@@ -31,31 +31,31 @@ bool List::insert(int key) {
     } while (true);
 }
 
+bool List::isMarkedPtr(size_t node) {
+    return (node & 1) != 0;
+}
+
 bool List::isMarkedPtr(Node *node) {
-    if (node < this->head) {
-        return true;
-    } else {
-        return false;
-    }
+    return isMarkedPtr((size_t) node);
 }
 
 Node *List::getMarkedPtr(Node *node) {
-    Node *returnNode = node;
-    if (isMarkedPtr(returnNode)) {
-        return returnNode;
+    size_t ptr = (size_t) node;
+    if (isMarkedPtr(ptr)) {
+        return (Node *) (ptr);
     } else {
-        returnNode -= 0x006000000000;
-        return returnNode;
+        ptr = ptr | 1;
+        return (Node *) ptr;
     }
 }
 
 Node *List::getUnmarkedPtr(Node *node) {
-    Node *returnNode = node;
-    if (!isMarkedPtr(returnNode)) {
-        return returnNode;
+    size_t ptr = (size_t) node;
+    if (!isMarkedPtr(ptr)) {
+        return (Node *) ptr;
     } else {
-        returnNode += 0x006000000000;
-        return returnNode;
+        ptr = ptr & (std::numeric_limits<std::size_t>::max() - 1);
+        return (Node *) ptr;
     }
 }
 
@@ -67,20 +67,23 @@ Node *List::getUnmarkedPtr(Node *node) {
  */
 Node *List::search(int searchKey, Node **leftNode) {
     Node *leftNextNode, *rightNode;
-
+    int i = 0;
     do {
         Node *t = this->head;
         Node *tNext = this->head->next;
 //        1: Find left and right nodes
         do {
+            i++;
             if (!isMarkedPtr(tNext)) {
                 (*leftNode) = t;
                 leftNextNode = tNext;
             }
             t = getUnmarkedPtr(tNext);
-            if (t == this->tail) break;
+            if (t == this->tail)
+                break;
             tNext = t->next;
-        } while (isMarkedPtr(t) || (t->key < searchKey));
+        } while (isMarkedPtr(tNext) ||
+                (t->key < searchKey));
         rightNode = t;
 
 //        2: Check Nodes are adjacent
@@ -104,17 +107,6 @@ Node *List::search(int searchKey, Node **leftNode) {
     } while (true);
 }
 
-
-bool List::contains(int key) {
-    Node *rightNode, *leftNode;
-
-    rightNode = search(key, &leftNode);
-    if ((rightNode == this->tail) || (rightNode->key != key))
-        return false;
-    else
-        return true;
-}
-
 /**
  * marks the Node with the specified key
  * @param searchKey
@@ -131,14 +123,14 @@ bool List::del(int searchKey) {
         rightNextNode = rightNode->next;
 
         if (!isMarkedPtr(rightNextNode)) {
-            if (rightNode->next.compare_exchange_weak(rightNextNode, getMarkedPtr(rightNextNode)))
+            if (rightNode->next.compare_exchange_weak(rightNextNode, getMarkedPtr(rightNextNode))) {
                 break;
+            }
         }
     } while (true);
     if (!(leftNode->next.compare_exchange_weak(rightNode, rightNextNode))) {
         rightNode = this->search(searchKey, &leftNode);
-    }
-
+    } else {}
     return true;
 }
 

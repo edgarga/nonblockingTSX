@@ -8,14 +8,19 @@
 
 #include "node.h"
 
+
 class List {
 public:
     Node *head;
     Node *tail;
-    std::atomic<bool *> toTrue;
-    std::atomic<bool *> toFalse;
+//    std::atomic<bool *> toTrue;
+//    std::atomic<bool *> toFalse;
     int *insertsByNonBlock, *insertsByTSX, *deletesByNonBlock, *deletesByTSX;
     long long *absoluteTriesDeleteTSX, *absoluteTriesInsertTSX;
+
+    int absoluteTries_Insert;
+    int absoluteTries_Delete;
+
 
     List();
 
@@ -24,10 +29,13 @@ public:
     bool insert(int key, int threadId);
 
     bool del(int searchKey, int threadId);
-    bool delNonBlocok(int searchKey);
 
     Node *search(int key, Node **leftNode);
 
+    bool isMarkedPtr(size_t node);
+    bool isMarkedPtr(Node *node);
+    Node* getMarkedPtr(Node *node);
+    Node* getUnmarkedPtr(Node *node);
 
     void print();
     void printStats();

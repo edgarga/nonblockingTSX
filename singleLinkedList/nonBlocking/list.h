@@ -17,6 +17,7 @@ public:
 
     bool contains(int key);
 
+    bool isMarkedPtr(size_t node);
     bool isMarkedPtr(Node *node);
     Node *getMarkedPtr(Node *node);
     Node *getUnmarkedPtr(Node *node);
