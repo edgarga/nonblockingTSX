@@ -89,29 +89,49 @@ int main(int numberOfArguments, char *arguments[]) {
     list.absoluteTriesDeleteTSX = new long long[num_threads];
 
 
-    useSome = true;
-
     int pushCount = 0;
     int delCount = 0;
 
     time_start();
 
-    if(nonBlock){
+    if (nonBlock) {
         list.absoluteTries_Delete = 0;
         list.absoluteTries_Insert = 0;
     }
 
-    if (standardTest) {
+    if (focusFront) {
 
+        useSome = true;
+
+        std::cout << "initializing front test" << std::endl;
+        some = num_elements + 100;
+        for (int j = 0; j < num_elements; j++) {
+            std::vector<std::thread> tv;
+            for (int i = 0; i < num_threads; i++) {
+                tv.push_back(std::thread(pushWorker, std::ref(list), num_elements, i));
+                tv.push_back(std::thread(deleteWorker, std::ref(list), num_elements, i));
+            }
+            for (auto &t: tv)
+                t.join();
+//        if(list.del(some, -1))
+//            delCount++;
+            some--;
+        }
+        useSome = false;
+        std::cout << "finished front test" << std::endl;
+    }
+
+    if (focusBack) {
+
+        useSome = true;
 
         std::cout << "initializing standard test" << std::endl;
 
         for (int j = 0; j < num_elements; j++) {
-            list.print();
             std::vector<std::thread> tv;
             for (int i = 0; i < num_threads; i++) {
                 tv.push_back(std::thread(pushWorker, std::ref(list), num_elements, i));
-//                tv.push_back(std::thread(deleteWorker, std::ref(list), num_elements, i));
+                tv.push_back(std::thread(deleteWorker, std::ref(list), num_elements, i));
             }
             for (auto &t: tv)
                 t.join();
@@ -119,12 +139,14 @@ int main(int numberOfArguments, char *arguments[]) {
 //            delCount++;
             some++;
         }
+        useSome = false;
         std::cout << "finished standard test" << std::endl;
     }
     int bla = 0;
 
     if (doShort) {
         std::vector<std::thread> tv;
+
         for (int i = 0; i < num_threads; i++) {
             bla++;
             tv.push_back(std::thread(pushWorkerIntense, std::ref(list), num_elements, i));
@@ -132,6 +154,18 @@ int main(int numberOfArguments, char *arguments[]) {
         }
         for (auto &t: tv)
             t.join();
+
+        std::cout << "insert finished" << std::endl;
+
+//        std::vector<std::thread> t;
+//
+//        for (int i = 0; i < num_threads; i++) {
+//            bla++;
+////            t.push_back(std::thread(pushWorkerIntense, std::ref(list), num_elements, i));
+//            t.push_back(std::thread(deleteWorkerIntense, std::ref(list), num_elements, i));
+//        }
+//        for (auto &t: t)
+//            t.join();
     }
 
     if (workbench) {
@@ -158,7 +192,6 @@ int main(int numberOfArguments, char *arguments[]) {
     }
 
 
-
     time_stop();
 //    list.print();
 
@@ -178,7 +211,7 @@ int main(int numberOfArguments, char *arguments[]) {
     int count = 0, absCount = 0;
     Node *curr = list.head;
     while (curr->next != list.tail) {
-        if (list.isMarkedPtr(curr->next) == false)
+        if (!list.isMarkedPtr(curr->next))
             count++;
         absCount++;
         curr = list.getUnmarkedPtr(curr->next);

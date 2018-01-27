@@ -8,10 +8,10 @@ extern "C" {
 extern int num_elements;
 extern int num_threads;
 extern int doShort;
-extern int standardTest;
+extern int focusBack;
 extern int workbench;
+extern int focusFront;
 extern int stack;
-extern int stack_back;
 extern int queue;
 extern int pop;
 extern int pop_back;

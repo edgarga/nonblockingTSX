@@ -15,6 +15,7 @@ List::List() {
     this->tail = new Node(std::numeric_limits<int>::max());
     this->head->next = this->tail;
 }
+
 bool List::isMarkedPtr(size_t node) {
     return (node & 1) != 0;
 }
@@ -181,7 +182,7 @@ bool List::del(int searchKey, int threadId) {
 
     Node *rightNode, *rightNextNode, *leftNode;
 
-    int  absoluteTries = 0;
+    int absoluteTries = 0;
 
     unsigned status;
 
@@ -192,20 +193,17 @@ bool List::del(int searchKey, int threadId) {
         rightNextNode = rightNode->next;
         while (absoluteTries < this->absoluteTries_Delete) {
             absoluteTries++;
-//            {/// try with TSX
             LockElision eLock;
             if ((status = eLock.startTransaction()) == _XBEGIN_STARTED) { /// check if transaction was started
-                if (leftNode->next != rightNode || rightNode->next !=
-                                                   rightNextNode || this->isMarkedPtr(
-                        rightNode->next)) { /// check if node were not change since search and start of transaction
+                if (leftNode->next != rightNode || rightNode->next != rightNextNode ||
+                    this->isMarkedPtr(rightNextNode)) {
 
                     break;
                 }
                 rightNode->next = getMarkedPtr(rightNode->next);
-                rightNextNode = rightNode->next;
+//                rightNextNode = rightNode->next;
                 leftNode->next = rightNextNode;
             }
-//            }
             if (
                     (eLock.endTransaction() && status == _XBEGIN_STARTED)
 //                &&
@@ -248,7 +246,6 @@ bool List::del(int searchKey, int threadId) {
         this->deletesByNonBlock[threadId]++;
     return true;
 }
-
 
 
 void List::printStats() {

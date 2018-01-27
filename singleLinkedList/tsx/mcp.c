@@ -6,10 +6,10 @@
 int num_elements;
 int num_threads;
 int doShort;
-int standardTest;
+int focusBack;
+int focusFront;
 int workbench;
 int stack;
-int stack_back;
 int pop;
 int pop_back;
 int queue;
@@ -36,10 +36,9 @@ void mcp_init(int argc, char **argv) {
     num_elements = 0;
     num_threads = 0;
     doShort = 0;
-    standardTest = 0;
+    focusBack = 0;
     workbench = 0;
     stack = 0;
-    stack_back = 0;
     queue = 0;
     nonBlock = 0;
 
@@ -57,16 +56,16 @@ void mcp_init(int argc, char **argv) {
             }
         } else if (strncmp(argv[i], "-intense", 3) == 0) {
             doShort = 1;
-        } else if (strncmp(argv[i], "-standard", 3) == 0) {
-            standardTest = 1;
+        } else if (strncmp(argv[i], "-focusBack", 3) == 0) {
+            focusBack = 1;
+        } else if (strncmp(argv[i], "-focusFront", 3) == 0) {
+            focusFront = 1;
         } else if (strncmp(argv[i], "-workbench", 3) == 0) {
             workbench = 1;
         } else if (strncmp(argv[i], "-nonBlock", 3) == 0) {
             nonBlock = 1;
         } else if (strncmp(argv[i], "-stack", 3) == 0) {
             stack = 1;
-        } else if (strncmp(argv[i], "-stackBack", 3) == 0) {
-            stack_back = 1;
         } else if (strncmp(argv[i], "-queue", 3) == 0) {
             queue = 1;
         } else {
