@@ -15,6 +15,7 @@ int pop_back;
 int queue;
 int queueSize;
 int nonBlock;
+int tsxTries;
 
 static struct timespec timer_begin;
 static struct timespec timer_end;
@@ -25,8 +26,9 @@ void help(char *p) {
     printf("options:\n");
     printf("  -n <NUM>    input size\n");
     printf("  -t <NUM>    run <NUM> threads\n");
+    printf(" [-tsxTries <NUM>]   number of TSX tries before using nonBlocking method\n");
     printf(" [-standard]  runs standard test\n");
-    printf(" [-nonBlock]  runs the test only in nonBlocking mode (no TSX operations)\n");
+    printf(" [-nonBlock]  runs the test only in nonBlocking mode (no TSX operations); same as -tsxTries 0\n");
     printf(" [-stackFront]  inserts and deletes -n times always on the front of the list with -t threads popping  and -t pushing\n");
     printf(" [-stackBack]  inserts and deletes -n times always on the back of the list with -t threads popping and -t pushing\n");
     printf(" [-queue]     inserts -n times with -t threads on the front and deletes -n times with -t threads on the back\n");
@@ -48,6 +50,7 @@ void mcp_init(int argc, char **argv) {
     queue = 0;
     queueSize = 0;
     nonBlock = 0;
+    tsxTries = -1;
 
 
     for (i = 1; i < argc; i++) {
@@ -59,6 +62,11 @@ void mcp_init(int argc, char **argv) {
         } else if (strncmp(argv[i], "-t", 3) == 0) {
             if (i + 1 < argc) {
                 num_threads = atoi(argv[i + 1]);
+                i++;
+            }
+        } else if (strncmp(argv[i], "-tsxTries", 3) == 0) {
+            if (i + 1 < argc) {
+                tsxTries = atoi(argv[i + 1]);
                 i++;
             }
         } else if (strncmp(argv[i], "-packed", 3) == 0) {

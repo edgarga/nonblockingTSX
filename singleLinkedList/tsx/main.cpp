@@ -197,6 +197,12 @@ int main(int numberOfArguments, char *arguments[]) {
         list.absoluteTries_Insert = 0;
     }
 
+    if(tsxTries >= 0){
+        list.absoluteTries_Insert = tsxTries;
+        list.absoluteTries_Delete = tsxTries;
+        std::cout << "tsx tries set to: " << list.absoluteTries_Delete << std::endl;
+    }
+
     if (queue) {
         ceil = num_elements;
         floor = num_elements;

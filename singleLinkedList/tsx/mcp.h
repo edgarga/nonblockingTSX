@@ -18,6 +18,7 @@ extern int pop_back;
 extern int queue;
 extern int queueSize;
 extern int nonBlock;
+extern int tsxTries;
 
 void mcp_init(int argc, char **argv);
 
