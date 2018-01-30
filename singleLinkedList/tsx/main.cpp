@@ -66,6 +66,89 @@ void deleteWorkerIntense(List &list, int deleteCount, int threadId) {
     }
 }
 
+
+std::atomic<int> ceil;
+std::atomic<int> floor;
+
+void pushQueueWorker(List &list, int pushCount, int threadId) {
+
+    for (int i = 0; i < pushCount; i++) {
+        if (floor <= 0) break;
+        int pushValue = floor;
+        if (list.insert(pushValue, threadId)) {
+            pushCountArray[threadId]++;
+            floor--;
+        }
+    }
+}
+
+void deleteQueueWorker(List &list, int deleteCount, int threadId) {
+    for (int i = 0; i < deleteCount; i++) {
+        if (ceil <= 0) break;
+        int delValue = ceil;
+        if (list.del(delValue, threadId)) {
+            deleteCountArray[threadId]++;
+            ceil--;
+        }
+
+    }
+}
+
+std::atomic<int> popFrontPosition;
+
+void pushPopWorker(List &list, int pushCount, int threadId) {
+
+    for (int i = 0; i < pushCount; i++) {
+        if (popFrontPosition <= 0) break;
+        int pushValue = popFrontPosition;
+        if (list.insert(pushValue, threadId)) {
+            pushCountArray[threadId]++;
+            popFrontPosition--;
+        }
+    }
+}
+
+void deletePopWorker(List &list, int deleteCount, int threadId) {
+    for (int i = 0; i < deleteCount; i++) {
+        if (popFrontPosition <= 0) break;
+        int delValue = popFrontPosition;
+        if (list.del(delValue, threadId)) {
+            deleteCountArray[threadId]++;
+            popFrontPosition++;
+        }
+
+    }
+}
+
+
+
+std::atomic<int> popBackPosition;
+
+void pushPopBackWorker(List &list, int pushCount, int threadId) {
+
+    for (int i = 0; i < pushCount; i++) {
+        if (popBackPosition <= 0) break;
+        int pushValue = popBackPosition;
+        if (list.insert(pushValue, threadId)) {
+            pushCountArray[threadId]++;
+            popBackPosition++;
+        }
+    }
+}
+
+void deletePopBackWorker(List &list, int deleteCount, int threadId) {
+    for (int i = 0; i < deleteCount; i++) {
+        if (popBackPosition <= 0) break;
+        int delValue = popBackPosition;
+        if (list.del(delValue, threadId)) {
+            deleteCountArray[threadId]++;
+            popBackPosition--;
+        }
+
+    }
+}
+
+
 int main(int numberOfArguments, char *arguments[]) {
     mcp_init(numberOfArguments, arguments);
 
@@ -97,6 +180,54 @@ int main(int numberOfArguments, char *arguments[]) {
     if (nonBlock) {
         list.absoluteTries_Delete = 0;
         list.absoluteTries_Insert = 0;
+    }
+
+    if (queue) {
+        ceil = queueSize;
+        floor = queueSize;
+        std::cout << "ceil: " << ceil << " | floor: " << floor << std::endl;
+
+        std::vector<std::thread> tv;
+        for (int i = 0; i < num_threads; i++) {
+            tv.push_back(std::thread(pushQueueWorker, std::ref(list), num_elements, i));
+            tv.push_back(std::thread(deleteQueueWorker, std::ref(list), num_elements, i));
+        }
+        for (auto &t: tv)
+            t.join();
+
+        list.print();
+        std::cout << "ceil: " << ceil << " | floor: " << floor << std::endl;
+
+    }
+
+    if(pop){
+        popFrontPosition = num_elements;
+        std::vector<std::thread> tv;
+        for (int i = 0; i < num_threads; i++) {
+            tv.push_back(std::thread(pushPopWorker, std::ref(list), num_elements, i));
+            tv.push_back(std::thread(deletePopWorker, std::ref(list), num_elements, i));
+        }
+        for (auto &t: tv)
+            t.join();
+
+//        list.print();
+        std::cout << "PopPosition: " << popFrontPosition << std::endl;
+
+    }
+
+    if(pop_back){
+        popBackPosition = num_elements;
+        std::vector<std::thread> tv;
+        for (int i = 0; i < num_threads; i++) {
+            tv.push_back(std::thread(pushPopBackWorker, std::ref(list), num_elements, i));
+            tv.push_back(std::thread(deletePopBackWorker, std::ref(list), num_elements, i));
+        }
+        for (auto &t: tv)
+            t.join();
+
+//        list.print();
+        std::cout << "PopBackPosition: " << popBackPosition << std::endl;
+
     }
 
     if (focusFront) {
@@ -198,7 +329,6 @@ int main(int numberOfArguments, char *arguments[]) {
     /**
      * calculate the successful insert and delete operations
      */
-    std::cout << std::endl << std::endl;
     for (int x = 0; x < num_threads; x++) {
         pushCount += pushCountArray[x];
         delCount += deleteCountArray[x];

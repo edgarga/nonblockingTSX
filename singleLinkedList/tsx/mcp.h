@@ -16,6 +16,7 @@ extern int queue;
 extern int pop;
 extern int pop_back;
 extern int queue;
+extern int queueSize;
 extern int nonBlock;
 
 void mcp_init(int argc, char **argv);

@@ -24,6 +24,11 @@ bool List::isMarkedPtr(Node *node) {
     return isMarkedPtr((size_t) node);
 }
 
+/**
+ * Marks the pointer to the node object by setting the smallest bit
+ * @param node a pointer to a Node object
+ * @return returns node | 1 if node is not marked, node otherwise
+ */
 Node *List::getMarkedPtr(Node *node) {
     size_t ptr = (size_t) node;
     if (isMarkedPtr(ptr)) {
@@ -34,6 +39,11 @@ Node *List::getMarkedPtr(Node *node) {
     }
 }
 
+/**
+ * Unmakrs the pointer ot he Node object be unsetting the smallest bit
+ * @param node a pointer to a Node object
+ * @return returns the pointer with the least bit not set
+ */
 Node *List::getUnmarkedPtr(Node *node) {
     size_t ptr = (size_t) node;
     if (!isMarkedPtr(ptr)) {
@@ -59,7 +69,6 @@ bool List::insert(int key, int threadId) {
         while (absoluteTries < this->absoluteTries_Insert) {
 
             absoluteTries++;
-//            { /// start critical Section
             LockElision eLock;
             if ((status = eLock.startTransaction()) == _XBEGIN_STARTED) { /// check if transaction was started
                 if (leftNode->next !=
@@ -69,17 +78,14 @@ bool List::insert(int key, int threadId) {
                 newNode->next = rightNode; /// insert new node
                 leftNode->next = newNode;
             }
-//            } /// end critical section
-
-            if ((eLock.endTransaction() && status == _XBEGIN_STARTED)
-//                && (leftNode->next == newNode && newNode->next == rightNode)
-                    ) { /// return if insert was successful
+            if ((eLock.endTransaction() && status == _XBEGIN_STARTED)) { /// return if insert was successful
                 if (threadId >= 0) {
                     this->absoluteTriesInsertTSX[threadId] += absoluteTries;
                     this->insertsByTSX[threadId]++;
                 }
                 return true;
             }
+
             if (status & _XABORT_RETRY) { /// do nothing if can be retried
             } else {
                 break; /// new search will be initiated
@@ -189,7 +195,6 @@ bool List::del(int searchKey, int threadId) {
     do {
         rightNode = search(searchKey, &leftNode);
         if (rightNode == this->tail || rightNode->key != searchKey) return false;
-//        std::cout << "s: " << searchKey << " g: " << rightNode->key << " at: " << absoluteTries << std::endl;
         rightNextNode = rightNode->next;
         while (absoluteTries < this->absoluteTries_Delete) {
             absoluteTries++;
@@ -204,12 +209,7 @@ bool List::del(int searchKey, int threadId) {
 //                rightNextNode = rightNode->next;
                 leftNode->next = rightNextNode;
             }
-            if (
-                    (eLock.endTransaction() && status == _XBEGIN_STARTED)
-//                &&
-//                            (leftNode->next == rightNextNode)
-                    ) {
-//            if (status == 0xffffffff || leftNode->next == rightNextNode) { /// return if insert was successful
+            if ((eLock.endTransaction() && status == _XBEGIN_STARTED)) {
                 if (threadId >= 0) {
                     this->deletesByTSX[threadId]++;
                     this->absoluteTriesDeleteTSX[threadId] += absoluteTries;

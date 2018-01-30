@@ -13,6 +13,7 @@ int stack;
 int pop;
 int pop_back;
 int queue;
+int queueSize;
 int nonBlock;
 
 static struct timespec timer_begin;
@@ -40,6 +41,7 @@ void mcp_init(int argc, char **argv) {
     workbench = 0;
     stack = 0;
     queue = 0;
+    queueSize = 0;
     nonBlock = 0;
 
 
@@ -66,8 +68,16 @@ void mcp_init(int argc, char **argv) {
             nonBlock = 1;
         } else if (strncmp(argv[i], "-stack", 3) == 0) {
             stack = 1;
+        } else if (strncmp(argv[i], "-popFront", 5) == 0) {
+            pop = 1;
+        } else if (strncmp(argv[i], "-popBack", 5) == 0) {
+            pop_back = 1;
         } else if (strncmp(argv[i], "-queue", 3) == 0) {
             queue = 1;
+            if (i + 1 < argc) {
+                queueSize = atoi(argv[i + 1]);
+                i++;
+            }
         } else {
             help(argv[0]);
         }
