@@ -67,7 +67,7 @@ bool List::insert(int key, int threadId) {
         if (rightNode->key == key) return false;
 
         while (absoluteTries < this->absoluteTries_Insert) {
-
+            if (threadId >= 0) { this->absoluteInsertTsxTries[threadId]++; }
             absoluteTries++;
             LockElision eLock;
             if ((status = eLock.startTransaction()) == _XBEGIN_STARTED) { /// check if transaction was started
@@ -80,13 +80,14 @@ bool List::insert(int key, int threadId) {
             }
             if ((eLock.endTransaction() && status == _XBEGIN_STARTED)) { /// return if insert was successful
                 if (threadId >= 0) {
-                    this->absoluteTriesInsertTSX[threadId] += absoluteTries;
+                    this->triesForSuccessfulInsertTSX[threadId] += absoluteTries;
                     this->insertsByTSX[threadId]++;
                 }
                 return true;
             }
 
             if (status & _XABORT_RETRY) { /// do nothing if can be retried
+                if(threadId >= 0){this->abortedTsxInsertTry[threadId]++;}
             } else {
                 break; /// new search will be initiated
             }
@@ -198,6 +199,7 @@ bool List::del(int searchKey, int threadId) {
         rightNextNode = rightNode->next;
         while (absoluteTries < this->absoluteTries_Delete) {
             absoluteTries++;
+            if (threadId >= 0) { this->absoluteDeleteTsxTries[threadId]++; }
             LockElision eLock;
             if ((status = eLock.startTransaction()) == _XBEGIN_STARTED) { /// check if transaction was started
                 if (leftNode->next != rightNode || rightNode->next != rightNextNode ||
@@ -212,12 +214,13 @@ bool List::del(int searchKey, int threadId) {
             if ((eLock.endTransaction() && status == _XBEGIN_STARTED)) {
                 if (threadId >= 0) {
                     this->deletesByTSX[threadId]++;
-                    this->absoluteTriesDeleteTSX[threadId] += absoluteTries;
+                    this->triesForSuccessfulDeleteTSX[threadId] += absoluteTries;
                 }
                 return true;
             }
 
             if (status & _XABORT_RETRY) { /// do nothing if can be retried
+                if(threadId){this->abortedTsxDeleteTry[threadId]++;}
             } else {
                 break; /// new search will be initiated
             }

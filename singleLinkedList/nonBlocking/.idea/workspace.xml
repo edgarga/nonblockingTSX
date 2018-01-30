@@ -14,10 +14,7 @@
     <list default="true" id="9bbbc674-11be-4b13-992f-164dd55ce84f" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change beforePath="$PROJECT_DIR$/../tsx/linkedListRun" afterPath="$PROJECT_DIR$/../tsx/linkedListRun" />
-      <change beforePath="$PROJECT_DIR$/../tsx/list.cpp" afterPath="$PROJECT_DIR$/../tsx/list.cpp" />
-      <change beforePath="$PROJECT_DIR$/../tsx/main.cpp" afterPath="$PROJECT_DIR$/../tsx/main.cpp" />
       <change beforePath="$PROJECT_DIR$/../tsx/mcp.c" afterPath="$PROJECT_DIR$/../tsx/mcp.c" />
-      <change beforePath="$PROJECT_DIR$/../tsx/mcp.h" afterPath="$PROJECT_DIR$/../tsx/mcp.h" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -75,7 +72,7 @@
       <file leaf-file-name="main.cpp" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/main.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="18">
+            <state relative-caret-position="-1008">
               <caret line="25" column="29" lean-forward="false" selection-start-line="25" selection-start-column="29" selection-end-line="25" selection-end-column="29" />
               <folding>
                 <element signature="e#0#19#0" expanded="true" />
@@ -182,7 +179,7 @@
     <detection-done>true</detection-done>
     <sorting>DEFINITION_ORDER</sorting>
   </component>
-  <component name="ProjectFrameBounds" extendedState="4">
+  <component name="ProjectFrameBounds" extendedState="6">
     <option name="x" value="993" />
     <option name="y" value="27" />
     <option name="width" value="917" />
@@ -206,7 +203,7 @@
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
-    <navigator currentView="ProjectPane" proportions="" version="1">
+    <navigator proportions="" version="1">
       <flattenPackages />
       <showMembers />
       <showModules />
@@ -219,24 +216,12 @@
       <manualOrder />
       <foldersAlwaysOnTop value="true" />
     </navigator>
-    <panes>
-      <pane id="ProjectPane">
-        <subPane>
-          <expand>
-            <path>
-              <item name="nonBlocking" type="dad4c3:CidrFilesViewHelper$MyProjectTreeStructure$1" />
-              <item name="nonBlocking" type="462c0819:PsiDirectoryNode" />
-            </path>
-          </expand>
-          <select />
-        </subPane>
-      </pane>
-    </panes>
+    <panes />
   </component>
   <component name="PropertiesComponent">
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="settings.editor.selected.configurable" value="preferences.keymap" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../tsx" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -305,7 +290,8 @@
       <workItem from="1516954326505" duration="618000" />
       <workItem from="1516977256400" duration="3136000" />
       <workItem from="1516989095366" duration="17934000" />
-      <workItem from="1517343874162" duration="433000" />
+      <workItem from="1517343874162" duration="655000" />
+      <workItem from="1517345622862" duration="28000" />
     </task>
     <task id="LOCAL-00001" summary="nonBlocking finish">
       <created>1516097218685</created>
@@ -339,10 +325,10 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="118033000" />
+    <option name="totallyTimeSpent" value="118283000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="993" y="27" width="917" height="1068" extended-state="4" />
+    <frame x="67" y="25" width="1853" height="1070" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.18888289" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
@@ -855,7 +841,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/main.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="18">
+        <state relative-caret-position="-1008">
           <caret line="25" column="29" lean-forward="false" selection-start-line="25" selection-start-column="29" selection-end-line="25" selection-end-column="29" />
           <folding>
             <element signature="e#0#19#0" expanded="true" />

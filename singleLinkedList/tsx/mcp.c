@@ -25,8 +25,13 @@ void help(char *p) {
     printf("options:\n");
     printf("  -n <NUM>    input size\n");
     printf("  -t <NUM>    run <NUM> threads\n");
-    printf(" [-intense]   runs intense test with -n random numbers in the range 0 - 9\n");
     printf(" [-standard]  runs standard test\n");
+    printf(" [-nonBlock]  runs the test only in nonBlocking mode (no TSX operations)\n");
+    printf(" [-stackFront]  inserts and deletes -n times always on the front of the list with -t threads popping  and -t pushing\n");
+    printf(" [-stackBack]  inserts and deletes -n times always on the back of the list with -t threads popping and -t pushing\n");
+    printf(" [-queue]     inserts -n times with -t threads on the front and deletes -n times with -t threads on the back\n");
+    printf(" [-packed]    inserts and deletes -n times random numbers between 0 - 9 with -t threads inserting and -t deleting\n");
+
 
     exit(1);
 }
@@ -56,7 +61,7 @@ void mcp_init(int argc, char **argv) {
                 num_threads = atoi(argv[i + 1]);
                 i++;
             }
-        } else if (strncmp(argv[i], "-intense", 3) == 0) {
+        } else if (strncmp(argv[i], "-packed", 3) == 0) {
             doShort = 1;
         } else if (strncmp(argv[i], "-focusBack", 3) == 0) {
             focusBack = 1;
@@ -66,18 +71,14 @@ void mcp_init(int argc, char **argv) {
             workbench = 1;
         } else if (strncmp(argv[i], "-nonBlock", 3) == 0) {
             nonBlock = 1;
-        } else if (strncmp(argv[i], "-stack", 3) == 0) {
-            stack = 1;
-        } else if (strncmp(argv[i], "-popFront", 5) == 0) {
+//        } else if (strncmp(argv[i], "-stack", 3) == 0) {
+//            stack = 1;
+        } else if (strncmp(argv[i], "-stackFront", 5) == 0) {
             pop = 1;
-        } else if (strncmp(argv[i], "-popBack", 5) == 0) {
+        } else if (strncmp(argv[i], "-stackBack", 5) == 0) {
             pop_back = 1;
         } else if (strncmp(argv[i], "-queue", 3) == 0) {
             queue = 1;
-            if (i + 1 < argc) {
-                queueSize = atoi(argv[i + 1]);
-                i++;
-            }
         } else {
             help(argv[0]);
         }

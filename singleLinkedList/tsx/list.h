@@ -16,7 +16,10 @@ public:
 //    std::atomic<bool *> toTrue;
 //    std::atomic<bool *> toFalse;
     int *insertsByNonBlock, *insertsByTSX, *deletesByNonBlock, *deletesByTSX;
-    long long *absoluteTriesDeleteTSX, *absoluteTriesInsertTSX;
+    long long *triesForSuccessfulDeleteTSX, *triesForSuccessfulInsertTSX;
+    long long *absoluteDeleteTsxTries, *absoluteInsertTsxTries;
+    long long *abortedTsxDeleteTry, *abortedTsxInsertTry;
+
 
     int absoluteTries_Insert;
     int absoluteTries_Delete;

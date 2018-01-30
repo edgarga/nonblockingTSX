@@ -154,13 +154,6 @@ int main(int numberOfArguments, char *arguments[]) {
 
     upperLimit = num_elements;
 
-    /// initialize resultChecking arrays
-    pushCountArray = new int[num_threads];
-    deleteCountArray = new int[num_threads];
-    for (int j = 0; j < num_threads; j++) {
-        pushCountArray[j] = 0;
-        deleteCountArray[j] = 0;
-    }
 
     /// start the test
     List list;
@@ -168,8 +161,30 @@ int main(int numberOfArguments, char *arguments[]) {
     list.insertsByTSX = new int[num_threads];
     list.deletesByNonBlock = new int[num_threads];
     list.deletesByTSX = new int[num_threads];
-    list.absoluteTriesInsertTSX = new long long[num_threads];
-    list.absoluteTriesDeleteTSX = new long long[num_threads];
+    list.triesForSuccessfulInsertTSX = new long long[num_threads];
+    list.triesForSuccessfulDeleteTSX = new long long[num_threads];
+    list.absoluteInsertTsxTries = new long long [num_elements];
+    list.absoluteDeleteTsxTries = new long long [num_elements];
+    list.abortedTsxInsertTry = new long long[num_elements];
+    list.abortedTsxDeleteTry = new long long[num_elements];
+
+    /// initialize resultChecking arrays
+    pushCountArray = new int[num_threads];
+    deleteCountArray = new int[num_threads];
+    for (int j = 0; j < num_threads; j++) {
+        pushCountArray[j] = 0;
+        deleteCountArray[j] = 0;
+        list.insertsByNonBlock[num_threads] = 0;
+        list.insertsByTSX[num_threads] = 0;
+        list.deletesByNonBlock[num_threads] = 0;
+        list.deletesByTSX[num_threads] = 0;
+        list.triesForSuccessfulInsertTSX[num_threads] = 0;
+        list.triesForSuccessfulDeleteTSX[num_threads] = 0;
+        list.absoluteInsertTsxTries[num_elements] = 0;
+        list.absoluteDeleteTsxTries[num_elements] = 0;
+        list.abortedTsxInsertTry[num_elements] = 0;
+        list.abortedTsxDeleteTry[num_elements] = 0;
+    }
 
 
     int pushCount = 0;
@@ -183,8 +198,8 @@ int main(int numberOfArguments, char *arguments[]) {
     }
 
     if (queue) {
-        ceil = queueSize;
-        floor = queueSize;
+        ceil = num_elements;
+        floor = num_elements;
         std::cout << "ceil: " << ceil << " | floor: " << floor << std::endl;
 
         std::vector<std::thread> tv;
@@ -355,7 +370,9 @@ int main(int numberOfArguments, char *arguments[]) {
 
     long long absoluteSuccessfulInsertsByTSX = 0, absoluteSuccessfulDeletesByTSX = 0;
     long long absoluteSuccessfulInsertsByNonBlock = 0, absoluteSuccessfulDeletesByNonBlock = 0;
-    long long absoluteTSXInsertTries = 0, absoluteTSXDeleteTries = 0;
+    long long tsxInsertTriesUntilSuccess = 0, tsxDeleteTriesUntilSuccess = 0;
+    long long absoluteDeleteTsxTries = 0, absoluteInsertTsxTries = 0;
+    long long absoluteAbortedDeleteTries = 0, absoluteAbortedInsertTries = 0;
 
     for (int i = 0; i < num_threads; i++) {
         absoluteSuccessfulInsertsByTSX += list.insertsByTSX[i];
@@ -364,22 +381,38 @@ int main(int numberOfArguments, char *arguments[]) {
         absoluteSuccessfulInsertsByNonBlock += list.insertsByNonBlock[i];
         absoluteSuccessfulDeletesByNonBlock += list.deletesByNonBlock[i];
 
-        absoluteTSXInsertTries += list.absoluteTriesInsertTSX[i];
-        absoluteTSXDeleteTries += list.absoluteTriesDeleteTSX[i];
+        tsxInsertTriesUntilSuccess += list.triesForSuccessfulInsertTSX[i];
+        tsxDeleteTriesUntilSuccess += list.triesForSuccessfulDeleteTSX[i];
+
+        absoluteInsertTsxTries += list.absoluteInsertTsxTries[i];
+        absoluteDeleteTsxTries += list.absoluteDeleteTsxTries[i];
+
+        absoluteAbortedInsertTries += list.abortedTsxInsertTry[i];
+        absoluteAbortedDeleteTries += list.abortedTsxDeleteTry[i];
     }
 
 
-    double a = static_cast<double>(absoluteTSXInsertTries) / static_cast<double> (absoluteSuccessfulInsertsByTSX);
-    double b = static_cast<double>(absoluteTSXDeleteTries) / static_cast<double> (absoluteSuccessfulDeletesByTSX);
+    double a = static_cast<double>(tsxInsertTriesUntilSuccess) / static_cast<double> (absoluteSuccessfulInsertsByTSX);
+    double b = static_cast<double>(tsxDeleteTriesUntilSuccess) / static_cast<double> (absoluteSuccessfulDeletesByTSX);
+
+    double tsxTriesPerInsert = static_cast<double>(absoluteInsertTsxTries) / static_cast<double> (pushCount);
+    double tsxTriesPerDelete = static_cast<double>(absoluteDeleteTsxTries) / static_cast<double> (delCount);
+
+    double tsxAbortsPerInsert = static_cast<double> (absoluteAbortedInsertTries) / static_cast<double> (pushCount);
+    double tsxAbortsPerDelete = static_cast<double> (absoluteAbortedDeleteTries) / static_cast<double> (delCount);
 
     std::cout << "nonBlock inserts: " << absoluteSuccessfulInsertsByNonBlock << std::endl;
     std::cout << "tsx inserts: " << absoluteSuccessfulInsertsByTSX << std::endl;
-    std::cout << "tsx insert tries absolute: " << absoluteTSXInsertTries << std::endl;
+    std::cout << "tsx insert tries absolute: " << absoluteInsertTsxTries << std::endl;
+    std::cout << "tsx tries per insert: " << tsxTriesPerInsert << std::endl;
+    std::cout << "tsx aborted per insert: " << tsxAbortsPerInsert << std::endl;
     std::cout << "tries per successful tsx insert: " << a << std::endl;
     std::cout << std::endl;
     std::cout << "nonBlock deletes: " << absoluteSuccessfulDeletesByNonBlock << std::endl;
     std::cout << "tsx deletes: " << absoluteSuccessfulDeletesByTSX << std::endl;
-    std::cout << "tsx delete tries absolute: " << absoluteTSXDeleteTries << std::endl;
+    std::cout << "tsx delete tries absolute: " << absoluteDeleteTsxTries << std::endl;
+    std::cout << "tsx tries per delete: " << tsxTriesPerDelete << std::endl;
+    std::cout << "tsx aborted per delete: " << tsxAbortsPerDelete << std::endl;
     std::cout << "tries per successful tsx delete: " << b << std::endl;
 
     return 0;
