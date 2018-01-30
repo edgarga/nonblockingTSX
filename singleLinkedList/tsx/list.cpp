@@ -67,7 +67,7 @@ bool List::insert(int key, int threadId) {
         if (rightNode->key == key) return false;
 
         while (absoluteTries < this->absoluteTries_Insert) {
-            if (threadId >= 0) { this->absoluteInsertTsxTries[threadId]++; }
+
             absoluteTries++;
             LockElision eLock;
             if ((status = eLock.startTransaction()) == _XBEGIN_STARTED) { /// check if transaction was started
@@ -81,13 +81,14 @@ bool List::insert(int key, int threadId) {
             if ((eLock.endTransaction() && status == _XBEGIN_STARTED)) { /// return if insert was successful
                 if (threadId >= 0) {
                     this->triesForSuccessfulInsertTSX[threadId] += absoluteTries;
+                    this->absoluteInsertTsxTries[threadId] += absoluteTries;
                     this->insertsByTSX[threadId]++;
                 }
                 return true;
             }
 
             if (status & _XABORT_RETRY) { /// do nothing if can be retried
-                if(threadId >= 0){this->abortedTsxInsertTry[threadId]++;}
+                if (threadId >= 0) { this->abortedTsxInsertTry[threadId]++; }
             } else {
                 break; /// new search will be initiated
             }
@@ -102,7 +103,10 @@ bool List::insert(int key, int threadId) {
             newNode->next = rightNode;
 
             if (leftNode->next.compare_exchange_weak(rightNode, newNode)) {
-                this->insertsByNonBlock[threadId]++;
+                if (threadId >= 0) {
+                    this->absoluteInsertTsxTries[threadId] += absoluteTries;
+                    this->insertsByNonBlock[threadId]++;
+                }
                 return true;
             }
         }
@@ -189,6 +193,7 @@ bool List::del(int searchKey, int threadId) {
 
     Node *rightNode, *rightNextNode, *leftNode;
 
+
     int absoluteTries = 0;
 
     unsigned status;
@@ -199,7 +204,6 @@ bool List::del(int searchKey, int threadId) {
         rightNextNode = rightNode->next;
         while (absoluteTries < this->absoluteTries_Delete) {
             absoluteTries++;
-            if (threadId >= 0) { this->absoluteDeleteTsxTries[threadId]++; }
             LockElision eLock;
             if ((status = eLock.startTransaction()) == _XBEGIN_STARTED) { /// check if transaction was started
                 if (leftNode->next != rightNode || rightNode->next != rightNextNode ||
@@ -215,12 +219,13 @@ bool List::del(int searchKey, int threadId) {
                 if (threadId >= 0) {
                     this->deletesByTSX[threadId]++;
                     this->triesForSuccessfulDeleteTSX[threadId] += absoluteTries;
+                    this->absoluteDeleteTsxTries[threadId] += absoluteTries;
                 }
                 return true;
             }
 
             if (status & _XABORT_RETRY) { /// do nothing if can be retried
-                if(threadId){this->abortedTsxDeleteTry[threadId]++;}
+                if (threadId) { this->abortedTsxDeleteTry[threadId]++; }
             } else {
                 break; /// new search will be initiated
             }
@@ -230,6 +235,7 @@ bool List::del(int searchKey, int threadId) {
 
         if (absoluteTries >= this->absoluteTries_Delete) {
             if ((rightNode == this->tail) || (rightNode->key != searchKey)) {
+                if (threadId >= 0) { this->absoluteDeleteTsxTries[threadId] += absoluteTries; }
                 return false;
             }
             rightNextNode = rightNode->next;
@@ -245,8 +251,10 @@ bool List::del(int searchKey, int threadId) {
         rightNode = this->search(searchKey, &leftNode);
     }
 
-    if (threadId >= 0)
+    if (threadId >= 0) {
+        this->absoluteDeleteTsxTries[threadId] += absoluteTries;
         this->deletesByNonBlock[threadId]++;
+    }
     return true;
 }
 
