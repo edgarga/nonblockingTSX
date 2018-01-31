@@ -11,7 +11,7 @@ extern int doShort;
 extern int focusBack;
 extern int workbench;
 extern int focusFront;
-extern int stack;
+extern int standard;
 extern int queue;
 extern int pop;
 extern int pop_back;

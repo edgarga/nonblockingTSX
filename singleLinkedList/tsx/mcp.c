@@ -9,7 +9,7 @@ int doShort;
 int focusBack;
 int focusFront;
 int workbench;
-int stack;
+int standard;
 int pop;
 int pop_back;
 int queue;
@@ -46,7 +46,7 @@ void mcp_init(int argc, char **argv) {
     doShort = 0;
     focusBack = 0;
     workbench = 0;
-    stack = 0;
+    standard = 0;
     queue = 0;
     queueSize = 0;
     nonBlock = 0;
@@ -79,8 +79,8 @@ void mcp_init(int argc, char **argv) {
             workbench = 1;
         } else if (strncmp(argv[i], "-nonBlock", 3) == 0) {
             nonBlock = 1;
-//        } else if (strncmp(argv[i], "-stack", 3) == 0) {
-//            stack = 1;
+        } else if (strncmp(argv[i], "-standard", 3) == 0) {
+            standard = 1;
         } else if (strncmp(argv[i], "-stackFront", 5) == 0) {
             pop = 1;
         } else if (strncmp(argv[i], "-stackBack", 5) == 0) {

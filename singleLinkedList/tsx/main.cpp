@@ -203,6 +203,18 @@ int main(int numberOfArguments, char *arguments[]) {
         std::cout << "tsx tries set to: " << list.absoluteTries_Delete << std::endl;
     }
 
+    if(standard){
+        useSome = false;
+        upperLimit = num_elements / 4;
+        std::vector<std::thread> tv;
+        for (int i = 0; i < num_threads; i++) {
+            tv.push_back(std::thread(pushWorker, std::ref(list), num_elements, i));
+            tv.push_back(std::thread(deleteWorker, std::ref(list), num_elements, i));
+        }
+        for (auto &t: tv)
+            t.join();
+    }
+
     if (queue) {
         ceil = num_elements;
         floor = num_elements;
