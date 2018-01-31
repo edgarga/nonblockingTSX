@@ -32,7 +32,7 @@ bool List::isMarkedPtr(Node *node) {
 Node *List::getMarkedPtr(Node *node) {
     size_t ptr = (size_t) node;
     if (isMarkedPtr(ptr)) {
-        return (Node *) (ptr);
+        return (Node * )(ptr);
     } else {
         ptr = ptr | 1;
         return (Node *) ptr;
@@ -61,42 +61,47 @@ bool List::insert(int key, int threadId) {
     int absoluteTries = 0;
     do {
 
-        rightNode = this->search(key, &leftNode);
         unsigned status;
 
-        if (rightNode->key == key) return false;
+        if (absoluteTries < this->absoluteTries_Insert) {
+            if (this->useTsxSearch)
+                rightNode = tsxSearch(key, &leftNode);
+            else
+                rightNode = search(key, &leftNode);
+            if (rightNode->key == key) return false;
 
-        while (absoluteTries < this->absoluteTries_Insert) {
+            while (absoluteTries < this->absoluteTries_Insert) {
+                absoluteTries++;
 
-            absoluteTries++;
-            LockElision eLock;
-            if ((status = eLock.startTransaction()) == _XBEGIN_STARTED) { /// check if transaction was started
-                if (leftNode->next !=
-                    rightNode) /// check if node were not change since search and start of transaction
-                    break;
+                LockElision eLock;
+                if ((status = eLock.startTransaction()) == _XBEGIN_STARTED) { /// check if transaction was started
+                    if (leftNode->next != rightNode || this->isMarkedPtr(leftNode) || this->isMarkedPtr(rightNode))
+                        break;
 
-                newNode->next = rightNode; /// insert new node
-                leftNode->next = newNode;
-            }
-            if ((eLock.endTransaction() && status == _XBEGIN_STARTED)) { /// return if insert was successful
-                if (threadId >= 0) {
-                    this->triesForSuccessfulInsertTSX[threadId] += absoluteTries;
-                    this->absoluteInsertTsxTries[threadId] += absoluteTries;
-                    this->insertsByTSX[threadId]++;
+                    newNode->next = rightNode; /// insert new node
+                    leftNode->next = newNode;
                 }
-                return true;
-            }
+                if ((eLock.endTransaction() && status == _XBEGIN_STARTED)) { /// return if insert was successful
+                    if (threadId >= 0) {
+                        this->triesForSuccessfulInsertTSX[threadId] += absoluteTries;
+                        this->absoluteInsertTsxTries[threadId] += absoluteTries;
+                        this->insertsByTSX[threadId]++;
+                    }
+                    return true;
+                }
 
-            if (status & _XABORT_RETRY) { /// do nothing if can be retried
-                if (threadId >= 0) { this->abortedTsxInsertTry[threadId]++; }
-            } else {
-                break; /// new search will be initiated
+                if (status & _XABORT_RETRY) { /// do nothing if can be retried
+                    if (threadId >= 0) { this->abortedTsxInsertTry[threadId]++; }
+                } else {
+                    break; /// new search will be initiated
+                }
             }
 
 
         }
 
         if (absoluteTries >= this->absoluteTries_Insert) {
+            rightNode = this->search(key, &leftNode);
             if ((rightNode != this->tail) && (rightNode->key == key)) {
                 return false;
             }
@@ -117,6 +122,29 @@ bool List::insert(int key, int threadId) {
 
 }
 
+Node *List::tsxSearch(int key, Node **leftNode) {
+    Node *leftNextNode, *rightNode;
+    int i = 0;
+
+    Node *t = this->head;
+    Node *tNext = this->head->next;
+//        1: Find left and right nodes
+    do {
+        i++;
+        if (!isMarkedPtr(tNext)) {
+            (*leftNode) = t;
+            leftNextNode = tNext;
+        }
+        t = getUnmarkedPtr(tNext);
+        if (t == this->tail)
+            break;
+        tNext = t->next;
+    } while (isMarkedPtr(tNext) ||
+             (t->key < key));
+    rightNode = t;
+    return rightNode;
+
+}
 
 /**
  * searches the the Node with the specified key and deletes marked Nodes
@@ -199,41 +227,47 @@ bool List::del(int searchKey, int threadId) {
     unsigned status;
 
     do {
-        rightNode = search(searchKey, &leftNode);
-        if (rightNode == this->tail || rightNode->key != searchKey) return false;
-        rightNextNode = rightNode->next;
-        while (absoluteTries < this->absoluteTries_Delete) {
-            absoluteTries++;
-            LockElision eLock;
-            if ((status = eLock.startTransaction()) == _XBEGIN_STARTED) { /// check if transaction was started
-                if (leftNode->next != rightNode || rightNode->next != rightNextNode ||
-                    this->isMarkedPtr(rightNextNode)) {
+        if (absoluteTries < this->absoluteTries_Delete) {
+            if (this->useTsxSearch)
+                rightNode = tsxSearch(searchKey, &leftNode);
+            else
+                rightNode = search(searchKey, &leftNode);
+            if (rightNode == this->tail || rightNode->key != searchKey) return false;
+            rightNextNode = rightNode->next;
+            while (absoluteTries < this->absoluteTries_Delete) {
+                LockElision eLock;
+                if ((status = eLock.startTransaction()) == _XBEGIN_STARTED) { /// check if transaction was started
+                    if (leftNode->next != rightNode || rightNode->next != rightNextNode ||
+                        this->isMarkedPtr(rightNextNode) || this->isMarkedPtr(leftNode)) {
 
-                    break;
-                }
-                rightNode->next = getMarkedPtr(rightNode->next);
+                        break;
+                    }
+                    absoluteTries++;
+                    rightNode->next = getMarkedPtr(rightNode->next);
 //                rightNextNode = rightNode->next;
-                leftNode->next = rightNextNode;
-            }
-            if ((eLock.endTransaction() && status == _XBEGIN_STARTED)) {
-                if (threadId >= 0) {
-                    this->deletesByTSX[threadId]++;
-                    this->triesForSuccessfulDeleteTSX[threadId] += absoluteTries;
-                    this->absoluteDeleteTsxTries[threadId] += absoluteTries;
+                    leftNode->next = rightNextNode;
                 }
-                return true;
+                if ((eLock.endTransaction() && status == _XBEGIN_STARTED)) {
+                    if (threadId >= 0) {
+                        this->deletesByTSX[threadId]++;
+                        this->triesForSuccessfulDeleteTSX[threadId] += absoluteTries;
+                        this->absoluteDeleteTsxTries[threadId] += absoluteTries;
+                    }
+                    return true;
+                }
+
+                if (status & _XABORT_RETRY) { /// do nothing if can be retried
+                    if (threadId) { this->abortedTsxDeleteTry[threadId]++; }
+                } else {
+                    break; /// new search will be initiated
+                }
+
+
             }
-
-            if (status & _XABORT_RETRY) { /// do nothing if can be retried
-                if (threadId) { this->abortedTsxDeleteTry[threadId]++; }
-            } else {
-                break; /// new search will be initiated
-            }
-
-
         }
 
         if (absoluteTries >= this->absoluteTries_Delete) {
+            rightNode = search(searchKey, &leftNode);
             if ((rightNode == this->tail) || (rightNode->key != searchKey)) {
                 if (threadId >= 0) { this->absoluteDeleteTsxTries[threadId] += absoluteTries; }
                 return false;

@@ -13,7 +13,7 @@ int standard;
 int pop;
 int pop_back;
 int queue;
-int queueSize;
+int useTsxSearch;
 int nonBlock;
 int tsxTries;
 
@@ -48,7 +48,7 @@ void mcp_init(int argc, char **argv) {
     workbench = 0;
     standard = 0;
     queue = 0;
-    queueSize = 0;
+    useTsxSearch = 0;
     nonBlock = 0;
     tsxTries = -1;
 
@@ -87,6 +87,8 @@ void mcp_init(int argc, char **argv) {
             pop_back = 1;
         } else if (strncmp(argv[i], "-queue", 3) == 0) {
             queue = 1;
+        } else if (strncmp(argv[i], "-useTsxSearch", 3) == 0) {
+            useTsxSearch = 1;
         } else {
             help(argv[0]);
         }

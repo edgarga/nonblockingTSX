@@ -24,6 +24,7 @@ public:
     int absoluteTries_Insert;
     int absoluteTries_Delete;
 
+    bool useTsxSearch = false;
 
     List();
 
@@ -34,6 +35,7 @@ public:
     bool del(int searchKey, int threadId);
 
     Node *search(int key, Node **leftNode);
+    Node *tsxSearch(int key, Node **leftNode);
 
     bool isMarkedPtr(size_t node);
     bool isMarkedPtr(Node *node);

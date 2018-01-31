@@ -192,6 +192,10 @@ int main(int numberOfArguments, char *arguments[]) {
 
     time_start();
 
+    if(useTsxSearch){
+        list.useTsxSearch = true;
+    }
+
     if (nonBlock) {
         list.absoluteTries_Delete = 0;
         list.absoluteTries_Insert = 0;
@@ -334,14 +338,14 @@ int main(int numberOfArguments, char *arguments[]) {
 
     if (workbench) {
         list.insert(1, -2);
-        list.insert(5, -2);
-        Node *eins = list.head->next;
-        Node *fuenf = eins->next;
-
-        eins->next = list.getMarkedPtr(fuenf);
-
-        Node *left;
-        Node *bla = list.search(10, &left);
+//        list.insert(5, -2);
+//        Node *eins = list.head->next;
+//        Node *fuenf = eins->next;
+//
+//        eins->next = list.getMarkedPtr(fuenf);
+//
+//        Node *left;
+//        Node *bla = list.search(10, &left);
 
 //        if (list.getMarkedPtr(eins) > list.head + 1000000)
 //            std::cout << "bigger" << std::endl;

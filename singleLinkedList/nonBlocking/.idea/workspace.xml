@@ -12,9 +12,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9bbbc674-11be-4b13-992f-164dd55ce84f" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change beforePath="$PROJECT_DIR$/../tsx/linkedListRun" afterPath="$PROJECT_DIR$/../tsx/linkedListRun" />
+      <change beforePath="$PROJECT_DIR$/../tsx/list.cpp" afterPath="$PROJECT_DIR$/../tsx/list.cpp" />
+      <change beforePath="$PROJECT_DIR$/../tsx/list.h" afterPath="$PROJECT_DIR$/../tsx/list.h" />
+      <change beforePath="$PROJECT_DIR$/../tsx/main.cpp" afterPath="$PROJECT_DIR$/../tsx/main.cpp" />
       <change beforePath="$PROJECT_DIR$/../tsx/mcp.c" afterPath="$PROJECT_DIR$/../tsx/mcp.c" />
+      <change beforePath="$PROJECT_DIR$/../tsx/mcp.h" afterPath="$PROJECT_DIR$/../tsx/mcp.h" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -60,8 +63,8 @@
       <file leaf-file-name="list.cpp" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/list.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1944">
-              <caret line="108" column="0" lean-forward="false" selection-start-line="108" selection-start-column="0" selection-end-line="108" selection-end-column="0" />
+            <state relative-caret-position="144">
+              <caret line="59" column="1" lean-forward="true" selection-start-line="59" selection-start-column="1" selection-end-line="59" selection-end-column="1" />
               <folding>
                 <element signature="e#0#19#0" expanded="true" />
               </folding>
@@ -69,10 +72,10 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="main.cpp" pinned="false" current-in-tab="true">
+      <file leaf-file-name="main.cpp" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/main.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-1008">
+            <state relative-caret-position="-1851">
               <caret line="25" column="29" lean-forward="false" selection-start-line="25" selection-start-column="29" selection-end-line="25" selection-end-column="29" />
               <folding>
                 <element signature="e#0#19#0" expanded="true" />
@@ -113,11 +116,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="list.h" pinned="false" current-in-tab="false">
+      <file leaf-file-name="list.h" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/list.h">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="342">
-              <caret line="19" column="34" lean-forward="false" selection-start-line="19" selection-start-column="34" selection-end-line="19" selection-end-column="34" />
+            <state relative-caret-position="432">
+              <caret line="24" column="43" lean-forward="false" selection-start-line="24" selection-start-column="43" selection-end-line="24" selection-end-column="43" />
               <folding>
                 <element signature="e#0#17#0" expanded="true" />
               </folding>
@@ -165,11 +168,11 @@
       <list>
         <option value="$PROJECT_DIR$/CMakeLists.txt" />
         <option value="$PROJECT_DIR$/.gitignore" />
-        <option value="$PROJECT_DIR$/list.h" />
         <option value="$PROJECT_DIR$/node.h" />
         <option value="$PROJECT_DIR$/node.cpp" />
         <option value="$PROJECT_DIR$/main.cpp" />
         <option value="$PROJECT_DIR$/list.cpp" />
+        <option value="$PROJECT_DIR$/list.h" />
       </list>
     </option>
   </component>
@@ -221,7 +224,7 @@
   <component name="PropertiesComponent">
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="settings.editor.selected.configurable" value="preferences.keymap" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../tsx" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -292,6 +295,7 @@
       <workItem from="1516989095366" duration="17934000" />
       <workItem from="1517343874162" duration="655000" />
       <workItem from="1517345622862" duration="28000" />
+      <workItem from="1517415652789" duration="1550000" />
     </task>
     <task id="LOCAL-00001" summary="nonBlocking finish">
       <created>1516097218685</created>
@@ -325,7 +329,7 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="118283000" />
+    <option name="totallyTimeSpent" value="119833000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="67" y="25" width="1853" height="1070" extended-state="6" />
@@ -803,16 +807,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/list.h">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="342">
-          <caret line="19" column="34" lean-forward="false" selection-start-line="19" selection-start-column="34" selection-end-line="19" selection-end-column="34" />
-          <folding>
-            <element signature="e#0#17#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/node.h">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="126">
@@ -829,22 +823,32 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/list.cpp">
+    <entry file="file://$PROJECT_DIR$/main.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1944">
-          <caret line="108" column="0" lean-forward="false" selection-start-line="108" selection-start-column="0" selection-end-line="108" selection-end-column="0" />
+        <state relative-caret-position="-1851">
+          <caret line="25" column="29" lean-forward="false" selection-start-line="25" selection-start-column="29" selection-end-line="25" selection-end-column="29" />
           <folding>
             <element signature="e#0#19#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/main.cpp">
+    <entry file="file://$PROJECT_DIR$/list.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1008">
-          <caret line="25" column="29" lean-forward="false" selection-start-line="25" selection-start-column="29" selection-end-line="25" selection-end-column="29" />
+        <state relative-caret-position="144">
+          <caret line="59" column="1" lean-forward="true" selection-start-line="59" selection-start-column="1" selection-end-line="59" selection-end-column="1" />
           <folding>
             <element signature="e#0#19#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/list.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="432">
+          <caret line="24" column="43" lean-forward="false" selection-start-line="24" selection-start-column="43" selection-end-line="24" selection-end-column="43" />
+          <folding>
+            <element signature="e#0#17#0" expanded="true" />
           </folding>
         </state>
       </provider>

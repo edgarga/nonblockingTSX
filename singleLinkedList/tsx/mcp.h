@@ -16,7 +16,7 @@ extern int queue;
 extern int pop;
 extern int pop_back;
 extern int queue;
-extern int queueSize;
+extern int useTsxSearch;
 extern int nonBlock;
 extern int tsxTries;
 
