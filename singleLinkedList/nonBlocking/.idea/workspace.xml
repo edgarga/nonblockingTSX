@@ -13,6 +13,7 @@
   <component name="ChangeListManager">
     <list default="true" id="9bbbc674-11be-4b13-992f-164dd55ce84f" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/../tsx/list.cpp" afterPath="$PROJECT_DIR$/../tsx/list.cpp" />
+      <change beforePath="$PROJECT_DIR$/../tsx/main.cpp" afterPath="$PROJECT_DIR$/../tsx/main.cpp" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />

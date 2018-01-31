@@ -32,7 +32,7 @@ bool List::isMarkedPtr(Node *node) {
 Node *List::getMarkedPtr(Node *node) {
     size_t ptr = (size_t) node;
     if (isMarkedPtr(ptr)) {
-        return (Node * )(ptr);
+        return (Node *) (ptr);
     } else {
         ptr = ptr | 1;
         return (Node *) ptr;
@@ -137,7 +137,7 @@ Node *List::tsxSearch(int key, Node **leftNode) {
         tNext = t->next;
     } while (isMarkedPtr(tNext) ||
              (t->key < key));
-    return  t;
+    return t;
 
 }
 
@@ -230,6 +230,7 @@ bool List::del(int searchKey, int threadId) {
             if (rightNode == this->tail || rightNode->key != searchKey) return false;
             rightNextNode = rightNode->next;
             while (absoluteTries < this->absoluteTries_Delete) {
+                absoluteTries++;
                 LockElision eLock;
                 if ((status = eLock.startTransaction()) == _XBEGIN_STARTED) { /// check if transaction was started
                     if (leftNode->next != rightNode || rightNode->next != rightNextNode ||
@@ -237,7 +238,6 @@ bool List::del(int searchKey, int threadId) {
 
                         break;
                     }
-                    absoluteTries++;
                     rightNode->next = getMarkedPtr(rightNode->next);
 //                rightNextNode = rightNode->next;
                     leftNode->next = rightNextNode;

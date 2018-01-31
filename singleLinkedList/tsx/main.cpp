@@ -232,7 +232,6 @@ int main(int numberOfArguments, char *arguments[]) {
         for (auto &t: tv)
             t.join();
 
-        list.print();
         std::cout << "ceil: " << ceil << " | floor: " << floor << std::endl;
 
     }
