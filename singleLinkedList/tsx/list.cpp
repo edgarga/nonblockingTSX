@@ -123,17 +123,13 @@ bool List::insert(int key, int threadId) {
 }
 
 Node *List::tsxSearch(int key, Node **leftNode) {
-    Node *leftNextNode, *rightNode;
-    int i = 0;
 
     Node *t = this->head;
     Node *tNext = this->head->next;
 //        1: Find left and right nodes
     do {
-        i++;
         if (!isMarkedPtr(tNext)) {
             (*leftNode) = t;
-            leftNextNode = tNext;
         }
         t = getUnmarkedPtr(tNext);
         if (t == this->tail)
@@ -141,8 +137,7 @@ Node *List::tsxSearch(int key, Node **leftNode) {
         tNext = t->next;
     } while (isMarkedPtr(tNext) ||
              (t->key < key));
-    rightNode = t;
-    return rightNode;
+    return  t;
 
 }
 
