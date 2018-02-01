@@ -31,7 +31,8 @@ bool List::isMarkedPtr(Node *node) {
  */
 Node *List::getMarkedPtr(Node *node) {
     size_t ptr = (size_t) node;
-    return (Node *) ptr;
+        ptr = ptr | 1;
+        return (Node *) ptr;
 
 }
 
@@ -42,9 +43,8 @@ Node *List::getMarkedPtr(Node *node) {
  */
 Node *List::getUnmarkedPtr(Node *node) {
     size_t ptr = (size_t) node;
-    ptr = ptr & (std::numeric_limits<std::size_t>::max() - 1);
-    return (Node *) ptr;
-
+        ptr = ptr & (std::numeric_limits<std::size_t>::max() - 1);
+        return (Node *) ptr;
 }
 
 bool List::insert(int key, int threadId) {
