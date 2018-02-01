@@ -13,7 +13,7 @@
   <component name="ChangeListManager">
     <list default="true" id="9bbbc674-11be-4b13-992f-164dd55ce84f" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/../tsx/list.cpp" afterPath="$PROJECT_DIR$/../tsx/list.cpp" />
-      <change beforePath="$PROJECT_DIR$/../tsx/main.cpp" afterPath="$PROJECT_DIR$/../tsx/main.cpp" />
+      <change beforePath="$PROJECT_DIR$/../tsx/mcp.c" afterPath="$PROJECT_DIR$/../tsx/mcp.c" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -59,8 +59,8 @@
       <file leaf-file-name="list.cpp" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/list.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="144">
-              <caret line="59" column="1" lean-forward="true" selection-start-line="59" selection-start-column="1" selection-end-line="59" selection-end-column="1" />
+            <state relative-caret-position="1062">
+              <caret line="59" column="1" lean-forward="false" selection-start-line="59" selection-start-column="1" selection-end-line="59" selection-end-column="1" />
               <folding>
                 <element signature="e#0#19#0" expanded="true" />
               </folding>
@@ -71,7 +71,7 @@
       <file leaf-file-name="main.cpp" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/main.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-1851">
+            <state relative-caret-position="450">
               <caret line="25" column="29" lean-forward="false" selection-start-line="25" selection-start-column="29" selection-end-line="25" selection-end-column="29" />
               <folding>
                 <element signature="e#0#19#0" expanded="true" />
@@ -292,6 +292,7 @@
       <workItem from="1517343874162" duration="655000" />
       <workItem from="1517345622862" duration="28000" />
       <workItem from="1517415652789" duration="1550000" />
+      <workItem from="1517478593475" duration="1195000" />
     </task>
     <task id="LOCAL-00001" summary="nonBlocking finish">
       <created>1516097218685</created>
@@ -325,10 +326,10 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="119833000" />
+    <option name="totallyTimeSpent" value="121028000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="67" y="25" width="1853" height="1070" extended-state="6" />
+    <frame x="67" y="25" width="1853" height="950" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.18888289" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
@@ -821,7 +822,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/main.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1851">
+        <state relative-caret-position="450">
           <caret line="25" column="29" lean-forward="false" selection-start-line="25" selection-start-column="29" selection-end-line="25" selection-end-column="29" />
           <folding>
             <element signature="e#0#19#0" expanded="true" />
@@ -831,8 +832,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/list.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="144">
-          <caret line="59" column="1" lean-forward="true" selection-start-line="59" selection-start-column="1" selection-end-line="59" selection-end-column="1" />
+        <state relative-caret-position="1062">
+          <caret line="59" column="1" lean-forward="false" selection-start-line="59" selection-start-column="1" selection-end-line="59" selection-end-column="1" />
           <folding>
             <element signature="e#0#19#0" expanded="true" />
           </folding>

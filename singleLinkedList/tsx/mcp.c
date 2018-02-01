@@ -134,7 +134,7 @@ void time_print() {
     double s;
 
     s = time_get();
-    printf("\n *** EXECUTION TIME: %.9lfs ***\n\n", s);
+    printf("\n *** EXECUTION TIME: %.9lf s ***\n\n", s);
 }
 
 int get_num_threads() {
