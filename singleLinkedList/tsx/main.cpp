@@ -1,8 +1,10 @@
 #include <iostream>
 #include <thread>
 #include <vector>
+#include <math.h>
 #include "list.h"
 #include "mcp.h"
+#include "./../../benchmark/include/benchmark/benchmark.h"
 
 /**
  * arrays to count successful operations
@@ -17,9 +19,17 @@ int upperLimit = 0;
 int some = 0;
 bool useSome = false;
 
-void pushWorker(List &list, int pushCount, int threadId) {
+std::atomic<int> ceilN;
+std::atomic<int> floorN;
 
+void prepareListForTest(List &list, int numberThreads);
+
+void doStandardTest(List &list, int numberElements, int numThreads);
+
+void pushWorker(List &list, int pushCount, int threadId) {
     for (int i = 0; i < pushCount; i++) {
+        std::cout << "i" << std::endl;
+
         int value = rand() % upperLimit;
         if (useSome)
             value = some;
@@ -33,6 +43,7 @@ void pushWorker(List &list, int pushCount, int threadId) {
 
 void deleteWorker(List &list, int deleteCount, int threadId) {
     for (int i = 0; i < deleteCount; i++) {
+
         int value = rand() % upperLimit;
 
         if (useSome)
@@ -42,6 +53,7 @@ void deleteWorker(List &list, int deleteCount, int threadId) {
         }
 
     }
+    std::cout << "p: " << std::endl;
 }
 
 void pushWorkerIntense(List &list, int pushCount, int threadId) {
@@ -67,28 +79,25 @@ void deleteWorkerIntense(List &list, int deleteCount, int threadId) {
 }
 
 
-std::atomic<int> ceil;
-std::atomic<int> floor;
-
 void pushQueueWorker(List &list, int pushCount, int threadId) {
 
     for (int i = 0; i < pushCount; i++) {
-        if (floor <= 0) break;
-        int pushValue = floor;
+        if (floorN <= 0) break;
+        int pushValue = floorN;
         if (list.insert(pushValue, threadId)) {
             pushCountArray[threadId]++;
-            floor--;
+            floorN--;
         }
     }
 }
 
 void deleteQueueWorker(List &list, int deleteCount, int threadId) {
     for (int i = 0; i < deleteCount; i++) {
-        if (ceil <= 0) break;
-        int delValue = ceil;
+        if (ceilN <= 0) break;
+        int delValue = ceilN;
         if (list.del(delValue, threadId)) {
             deleteCountArray[threadId]++;
-            ceil--;
+            ceilN--;
         }
 
     }
@@ -121,8 +130,8 @@ void deletePopWorker(List &list, int deleteCount, int threadId) {
 }
 
 
-
 std::atomic<int> popBackPosition;
+
 
 void pushPopBackWorker(List &list, int pushCount, int threadId) {
 
@@ -149,7 +158,7 @@ void deletePopBackWorker(List &list, int deleteCount, int threadId) {
 }
 
 
-int main(int numberOfArguments, char *arguments[]) {
+int main_(int numberOfArguments, char *arguments[]) {
     mcp_init(numberOfArguments, arguments);
 
     upperLimit = num_elements;
@@ -157,34 +166,7 @@ int main(int numberOfArguments, char *arguments[]) {
 
     /// start the test
     List list;
-    list.insertsByNonBlock = new int[num_threads];
-    list.insertsByTSX = new int[num_threads];
-    list.deletesByNonBlock = new int[num_threads];
-    list.deletesByTSX = new int[num_threads];
-    list.triesForSuccessfulInsertTSX = new long long[num_threads];
-    list.triesForSuccessfulDeleteTSX = new long long[num_threads];
-    list.absoluteInsertTsxTries = new long long [num_elements];
-    list.absoluteDeleteTsxTries = new long long [num_elements];
-    list.abortedTsxInsertTry = new long long[num_elements];
-    list.abortedTsxDeleteTry = new long long[num_elements];
-
-    /// initialize resultChecking arrays
-    pushCountArray = new int[num_threads];
-    deleteCountArray = new int[num_threads];
-    for (int j = 0; j < num_threads; j++) {
-        pushCountArray[j] = 0;
-        deleteCountArray[j] = 0;
-        list.insertsByNonBlock[num_threads] = 0;
-        list.insertsByTSX[num_threads] = 0;
-        list.deletesByNonBlock[num_threads] = 0;
-        list.deletesByTSX[num_threads] = 0;
-        list.triesForSuccessfulInsertTSX[num_threads] = 0;
-        list.triesForSuccessfulDeleteTSX[num_threads] = 0;
-        list.absoluteInsertTsxTries[num_elements] = 0;
-        list.absoluteDeleteTsxTries[num_elements] = 0;
-        list.abortedTsxInsertTry[num_elements] = 0;
-        list.abortedTsxDeleteTry[num_elements] = 0;
-    }
+    prepareListForTest(list, num_elements);
 
 
     int pushCount = 0;
@@ -192,37 +174,32 @@ int main(int numberOfArguments, char *arguments[]) {
 
     time_start();
 
-    if(useTsxSearch){
+    if (useTsxSearch) {
         list.useTsxSearch = true;
     }
+
+
 
     if (nonBlock) {
         list.absoluteTries_Delete = 0;
         list.absoluteTries_Insert = 0;
     }
 
-    if(tsxTries >= 0){
+
+    if (tsxTries >= 0) {
         list.absoluteTries_Insert = tsxTries;
         list.absoluteTries_Delete = tsxTries;
         std::cout << "tsx tries set to: " << list.absoluteTries_Delete << std::endl;
     }
 
-    if(standard){
-        useSome = false;
-        upperLimit = num_elements / 4;
-        std::vector<std::thread> tv;
-        for (int i = 0; i < num_threads; i++) {
-            tv.push_back(std::thread(pushWorker, std::ref(list), num_elements, i));
-            tv.push_back(std::thread(deleteWorker, std::ref(list), num_elements, i));
-        }
-        for (auto &t: tv)
-            t.join();
+    if (standard) {
+        doStandardTest(list, num_elements, num_threads);
     }
 
     if (queue) {
-        ceil = num_elements;
-        floor = num_elements;
-        std::cout << "ceil: " << ceil << " | floor: " << floor << std::endl;
+        ceilN = num_elements;
+        floorN = num_elements;
+        std::cout << "ceil: " << ceilN << " | floor: " << floorN << std::endl;
 
         std::vector<std::thread> tv;
         for (int i = 0; i < num_threads; i++) {
@@ -232,11 +209,11 @@ int main(int numberOfArguments, char *arguments[]) {
         for (auto &t: tv)
             t.join();
 
-        std::cout << "ceil: " << ceil << " | floor: " << floor << std::endl;
+        std::cout << "ceil: " << ceilN << " | floor: " << floorN << std::endl;
 
     }
 
-    if(pop){
+    if (pop) {
         popFrontPosition = num_elements;
         std::vector<std::thread> tv;
         for (int i = 0; i < num_threads; i++) {
@@ -251,7 +228,7 @@ int main(int numberOfArguments, char *arguments[]) {
 
     }
 
-    if(pop_back){
+    if (pop_back) {
         popBackPosition = num_elements;
         std::vector<std::thread> tv;
         for (int i = 0; i < num_threads; i++) {
@@ -309,13 +286,11 @@ int main(int numberOfArguments, char *arguments[]) {
         useSome = false;
         std::cout << "finished standard test" << std::endl;
     }
-    int bla = 0;
 
     if (doShort) {
         std::vector<std::thread> tv;
 
         for (int i = 0; i < num_threads; i++) {
-            bla++;
             tv.push_back(std::thread(pushWorkerIntense, std::ref(list), num_elements, i));
             tv.push_back(std::thread(deleteWorkerIntense, std::ref(list), num_elements, i));
         }
@@ -336,8 +311,26 @@ int main(int numberOfArguments, char *arguments[]) {
     }
 
     if (workbench) {
-        list.insert(1, -2);
-//        list.insert(5, -2);
+        for (int i = 0; i <= 20; i += 2) {
+            list.insert(i, -2);
+        }
+        Node *right, *left;
+        right = list.tsxSearch(18, &left);
+        right->next = list.getMarkedPtr(right->next);
+        right = list.tsxSearch(16, &left);
+        right->next = list.getMarkedPtr(right->next);
+        list.print();
+        right = list.tsxSearch(15, &left);
+
+        std::cout << left->key << " -> " << right->key << " : "
+                  << (list.areMarkedInbetween(left, right) ? "true" : "false") << std::endl;
+
+        list.insert(15, 0);
+        std::cout << "inserting 1" << std::endl;
+        list.insert(10, 0);
+
+
+
 //        Node *eins = list.head->next;
 //        Node *fuenf = eins->next;
 //
@@ -355,7 +348,7 @@ int main(int numberOfArguments, char *arguments[]) {
 //
 //        list.insert(10, -2);
 //        std::cout<< (list.del(1,-1)? "deleted": "not deleted")<< std::endl;
-
+        list.print();
     }
 
 
@@ -436,6 +429,85 @@ int main(int numberOfArguments, char *arguments[]) {
     std::cout << "tsx aborted per delete: " << tsxAbortsPerDelete << std::endl;
     std::cout << "tries per successful tsx delete: " << b << std::endl;
 
+    std::cout << std::endl << "Numbers are ascending: " << (list.isIncreasing() ? "true" : "false") << std::endl;
+
     return 0;
 }
 
+void doStandardTest(List &list, int numberElements, int numThreads) {
+    std::cout << "test start" << std::endl;
+    useSome = false;
+    upperLimit = 1000;
+//    upperLimit = ceil(static_cast<double > (numberElements) / 4);
+    std::vector<std::thread> tv;
+    for (int i = 0; i < numThreads; i++) {
+//        tv.push_back(std::thread(pushWorker, std::ref(list), numberElements, i));
+//        tv.push_back(std::thread(deleteWorker, std::ref(list), numberElements, i));
+    }
+    for (auto &t: tv)
+        t.join();
+    std::cout << "test end" << std::endl;
+}
+
+void prepareListForTest(List &list, int threadCount) {
+    list.insertsByNonBlock = new int[threadCount];
+    list.insertsByTSX = new int[threadCount];
+    list.deletesByNonBlock = new int[threadCount];
+    list.deletesByTSX = new int[threadCount];
+    list.triesForSuccessfulInsertTSX = new long long[threadCount];
+    list.triesForSuccessfulDeleteTSX = new long long[threadCount];
+    list.absoluteInsertTsxTries = new long long[threadCount];
+    list.absoluteDeleteTsxTries = new long long[threadCount];
+    list.abortedTsxInsertTry = new long long[threadCount];
+    list.abortedTsxDeleteTry = new long long[threadCount];
+
+    /// initialize resultChecking arrays
+    pushCountArray = new int[threadCount];
+    deleteCountArray = new int[threadCount];
+    for (int j = 0; j < threadCount; j++) {
+        pushCountArray[j] = 0;
+        deleteCountArray[j] = 0;
+        list.insertsByNonBlock[threadCount] = 0;
+        list.insertsByTSX[threadCount] = 0;
+        list.deletesByNonBlock[threadCount] = 0;
+        list.deletesByTSX[threadCount] = 0;
+        list.triesForSuccessfulInsertTSX[num_threads] = 0;
+        list.triesForSuccessfulDeleteTSX[num_threads] = 0;
+        list.absoluteInsertTsxTries[threadCount] = 0;
+        list.absoluteDeleteTsxTries[threadCount] = 0;
+        list.abortedTsxInsertTry[threadCount] = 0;
+        list.abortedTsxDeleteTry[threadCount] = 0;
+    }
+}
+
+void test(benchmark::State &state) {
+    std::cout << "+" << std::endl;
+    List list;
+    prepareListForTest(list, 5);
+//    for (auto _ : state) {
+    doStandardTest(list, 1000, 5);
+    std::cout << "-" << std::endl;
+//    }
+//    while (state.KeepRunning()) {
+//        std::cout << "starting benchmark | threads: " << state.range(0) << " | numElements: " << state.range(1)
+//                  << std::endl;
+//        std::cout << "printing list" << std::endl;
+//        list.print();
+//    }
+
+}
+
+BENCHMARK(test)
+//->Args({1, 1000})
+//->Args({10, 0})
+//->Args({3, 1000})
+//->Args({4, 1000})
+//        ->Args({6, 0})
+//->Args({6, 1000})
+//->Args({7, 1000})
+//->Args({8, 1000})
+//->Args({9, 1000})
+//->Args({10, 1000})
+;
+
+BENCHMARK_MAIN();

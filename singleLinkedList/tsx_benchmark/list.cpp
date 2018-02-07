@@ -60,7 +60,7 @@ bool List::areMarkedInbetween(Node *start, Node *end) {
         return false;
 }
 
-bool List::insert(int key, int threadId) {
+bool List::insert(int key) {
     Node *newNode = new Node(key);
     Node *rightNode, *leftNode;
 
@@ -93,17 +93,11 @@ bool List::insert(int key, int threadId) {
                 }
                 if ((eLock.endTransaction() &&
                      (status == _XBEGIN_STARTED || status == 0))) { /// return if insert was successful
-                    if (threadId >= 0) {
-                        this->triesForSuccessfulInsertTSX[threadId] += absoluteTries;
-                        this->absoluteInsertTsxTries[threadId] += absoluteTries;
-                        this->insertsByTSX[threadId]++;
-                    }
                     return true;
                 }
 
 
                 if (status & _XABORT_RETRY) { /// do nothing if can be retried
-                    if (threadId >= 0) { this->abortedTsxInsertTry[threadId]++; }
                 } else {
                     break; /// new search will be initiated
                 }
@@ -121,10 +115,6 @@ bool List::insert(int key, int threadId) {
             newNode->next = rightNode;
             newNode->prior = leftNode;
             if (leftNode->next.compare_exchange_weak(rightNode, newNode)) {
-                if (threadId >= 0) {
-                    this->absoluteInsertTsxTries[threadId] += absoluteTries;
-                    this->insertsByNonBlock[threadId]++;
-                }
                 return true;
             }
         }
@@ -257,7 +247,7 @@ std::cout << "deleting list" << std::endl;
 //    delete
 }
 
-bool List::del(int searchKey, int threadId) {
+bool List::del(int searchKey) {
 
     Node *rightNode, *rightNextNode, *leftNode;
 
@@ -289,17 +279,11 @@ bool List::del(int searchKey, int threadId) {
                     rightNextNode->prior = leftNode;
                 }
                 if ((eLock.endTransaction() && status == _XBEGIN_STARTED)) {
-                    if (threadId >= 0) {
-                        this->deletesByTSX[threadId]++;
-                        this->triesForSuccessfulDeleteTSX[threadId] += absoluteTries;
-                        this->absoluteDeleteTsxTries[threadId] += absoluteTries;
-                    }
 //                    delete rightNode;
                     return true;
                 }
 
                 if (status & _XABORT_RETRY) { /// do nothing if can be retried
-                    if (threadId) { this->abortedTsxDeleteTry[threadId]++; }
                 } else {
                     break; /// new search will be initiated
                 }
@@ -311,7 +295,6 @@ bool List::del(int searchKey, int threadId) {
         if (absoluteTries >= this->absoluteTries_Delete) {
             rightNode = search(searchKey, &leftNode);
             if ((rightNode == this->tail) || (rightNode->key != searchKey)) {
-                if (threadId >= 0) { this->absoluteDeleteTsxTries[threadId] += absoluteTries; }
                 return false;
             }
             rightNextNode = rightNode->next;
@@ -326,13 +309,6 @@ bool List::del(int searchKey, int threadId) {
     } while (true);
     if (!(leftNode->next.compare_exchange_weak(rightNode, rightNextNode))) {
         rightNode = this->search(searchKey, &leftNode);
-    }
-//    else
-//        delete rightNode;
-
-    if (threadId >= 0) {
-        this->absoluteDeleteTsxTries[threadId] += absoluteTries;
-        this->deletesByNonBlock[threadId]++;
     }
     return true;
 }

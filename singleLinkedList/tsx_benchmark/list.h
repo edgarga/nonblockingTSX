@@ -13,14 +13,6 @@ class List {
 public:
     Node *head;
     Node *tail;
-//    std::atomic<bool *> toTrue;
-//    std::atomic<bool *> toFalse;
-    int *insertsByNonBlock, *insertsByTSX, *deletesByNonBlock, *deletesByTSX;
-    long long *triesForSuccessfulDeleteTSX, *triesForSuccessfulInsertTSX;
-    long long *absoluteDeleteTsxTries, *absoluteInsertTsxTries;
-    long long *abortedTsxDeleteTry, *abortedTsxInsertTry;
-
-//    Node *shortcuts [10];
 
 
     int absoluteTries_Insert;
@@ -32,9 +24,9 @@ public:
 
     ~List();
 
-    bool insert(int key, int threadId);
+    bool insert(int key);
 
-    bool del(int searchKey, int threadId);
+    bool del(int searchKey);
 
     Node *search(int key, Node **leftNode);
 
