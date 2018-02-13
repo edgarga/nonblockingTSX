@@ -27,24 +27,30 @@ public:
     Node *getUnmarkedPtr(size_t ptr);
     bool isMarked(Node *node);
     bool isMarked(size_t ptr);
-    bool isMarked(Node *node, int position);
-    bool isMarked(size_t ptr, int position);
+    bool isMarkedOnPosition(Node *node, int position);
+    bool isMarkedOnPosition(size_t ptr, int position);
 
-    Node *searchSl(int key);
+    Node *buildResult(Node *node, int status, bool success);
+    bool isIN(Node *node);
+    bool isDeleted(Node *node);
+    bool isSuccess(Node *node);
+    bool isDuplicateKey (Node *result);
+
+    Node *search(int key, Node **nextNode);
     Node *searchToLevel(int key, int level, Node **node);
-    Node *findStart();
-    Node *searchRight(int key, Node *node, Node *nextNode);
-    bool tryFlagNode(Node *previousNode, Node *targetNode);
+    int findStart(int level, Node **resultNode);
+    Node *searchRight(int key, Node *currentNode, Node **returnNode);
+    Node * tryFlagNode(Node *previousNode, Node *targetNode);
 
     bool insert(int key);
-    Node *insertNode(Node *newNode, Node *prevNode, Node *nextNode);
+    Node *insertNode(Node *newNode, Node *prevNode, Node *nextNode, Node **result);
 
     bool remove(int key);
-    Node *removeNode(Node *prevNode, Node *delNode);
+    bool removeNode(Node *prevNode, Node *delNode);
 
     bool helpMarked(Node *prevNode, Node *delNode);
     bool helpFlagged(Node *prevNode, Node *delNode);
-    bool tryMark(Node *node);
+    void tryMark(Node *node);
 
 
 

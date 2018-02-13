@@ -25,6 +25,7 @@ public:
 
     Node(int value);
     Node(bool isLimit, bool isHead);
+    void Init(int value);
     ~Node();
 };
 
