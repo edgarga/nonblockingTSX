@@ -11,7 +11,6 @@ void Node::Init(int value) {
     this->down = nullptr;
     this->towerRoot = nullptr;
     this->backLink = nullptr;
-    this->limitDown = nullptr;
     this->limitUp = nullptr;
 }
 

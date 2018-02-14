@@ -19,9 +19,9 @@ public:
     ///Limiting node Properties
     bool isLimitingNode = false;
     bool isHeadNode = false;
-    Node *limitDown;
     Node *limitUp;
 
+    int level = 0;
 
     Node(int value);
     Node(bool isLimit, bool isHead);

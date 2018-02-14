@@ -1,4 +1,4 @@
-OUT			= linkedListRun
+OUT			= skipList
 CFLAGS 		= -Wall -g -O3
 CPPFLAGS 	= $(CFLAGS) -std=c++11 -mrtm
 LIBS		= -pthread -lbenchmark

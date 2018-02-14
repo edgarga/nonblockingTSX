@@ -23,7 +23,7 @@ public:
     Node *getMarkedPtr(size_t ptr, int markingPosition);
     Node *getUnmarkedPtr(Node *node, int unmarkingPosition);
     Node *getUnmarkedPtr(size_t ptr, int unmarkingPosition);
-    Node *getUnmarkedPtr(Node *node);
+    Node *getNode(Node *node);
     Node *getUnmarkedPtr(size_t ptr);
     bool isMarked(Node *node);
     bool isMarked(size_t ptr);
@@ -37,7 +37,7 @@ public:
     bool isDuplicateKey (Node *result);
 
     Node *search(int key, Node **nextNode);
-    Node *searchToLevel(int key, int level, Node **node);
+    Node *searchToLevel(int key, int level, Node **nextReturnNode);
     int findStart(int level, Node **resultNode);
     Node *searchRight(int key, Node *currentNode, Node **returnNode);
     Node * tryFlagNode(Node *previousNode, Node *targetNode);
@@ -50,7 +50,7 @@ public:
 
     bool helpMarked(Node *prevNode, Node *delNode);
     bool helpFlagged(Node *prevNode, Node *delNode);
-    void tryMark(Node *node);
+    void tryMark(Node *delNode);
 
 
 
