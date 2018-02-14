@@ -12,6 +12,7 @@
 
 SkipList::SkipList(int levelCount) : maxLevel(levelCount) {
     Node *lowerHead = new Node(true, true);
+    lowerHead->level = 1;
     Node *lowerTail = new Node(true, false);
     this->headRoot = lowerHead;
     this->tailRoot = lowerTail;
@@ -19,11 +20,12 @@ SkipList::SkipList(int levelCount) : maxLevel(levelCount) {
 
     for (int i = 0; i < this->maxLevel; i++) {
         Node *newHead = new Node(true, true);
+        newHead->level = i + 2;
         Node *newTail = new Node(true, false);
         newHead->successor = newTail;
 
-        newHead->limitDown = lowerHead;
-        newTail->limitDown = lowerTail;
+        newHead->down = lowerHead;
+        newTail->down = lowerTail;
 
         lowerHead->limitUp = newHead;
         lowerTail->limitUp = newTail;
@@ -136,7 +138,7 @@ Node *SkipList::insertNode(Node *newNode, Node *prevNode, Node *nextNode, Node *
             helpFlagged(prevNode, getUnmarkedPtr(nextOfPrev)->successor);
         else {
             newNode->successor = getUnmarkedPtr(nextNode);
-            if (getUnmarkedPtr(prevNode)->successor.compare_exchange_weak(nextNode, newNode)) {
+            if (getUnmarkedPtr(prevNode)->successor.compare_exchange_strong(nextNode, newNode)) {
                 (*result) = newNode;
                 return prevNode;
             } else {
@@ -148,7 +150,7 @@ Node *SkipList::insertNode(Node *newNode, Node *prevNode, Node *nextNode, Node *
 
         }
         prevNode = searchRight(newNode->value, prevNode, &newNode);
-        if(getUnmarkedPtr(prevNode)->value == newNode->value){
+        if (getUnmarkedPtr(prevNode)->value == newNode->value) {
             size_t resultSequence = SKL_DUPLICATE_KEY;
             (*result) = (Node *) resultSequence;
             return prevNode;
@@ -161,23 +163,23 @@ Node *SkipList::insertNode(Node *newNode, Node *prevNode, Node *nextNode, Node *
 bool SkipList::helpMarked(Node *prevNode, Node *delNode) {
     Node *nextUnmarked = this->getUnmarkedPtr(delNode->successor);
     Node *nextOfPrev = getUnmarkedPtr(prevNode)->successor;
-    return prevNode->successor.compare_exchange_weak(delNode, nextUnmarked);
+    Node *flagedDelNode = getMarkedPtr(delNode,0);
+    return getUnmarkedPtr(prevNode)->successor.compare_exchange_strong(flagedDelNode, nextUnmarked);
 }
 
 bool SkipList::helpFlagged(Node *prevNode, Node *delNode) {
     Node *delNodeUnmarked = this->getUnmarkedPtr(delNode);
     delNodeUnmarked->backLink = prevNode;
     if (!this->isMarkedOnPosition(delNodeUnmarked->successor, 1))
-        this->tryMark(delNode);
-    std::cout << "trying delete : " << delNodeUnmarked->value << std::endl;
+        this->tryMark(delNodeUnmarked);
     return this->helpMarked(prevNode, delNode);
 }
 
 void SkipList::tryMark(Node *node) {
     do {
         Node *nextNode = this->getUnmarkedPtr(node->successor);
-        node->successor.compare_exchange_weak(nextNode, this->getMarkedPtr(nextNode, 1));
-        if (!this->isMarkedOnPosition(node->successor, 1) && this->isMarkedOnPosition(node->successor, 0))
+        node->successor.compare_exchange_strong(nextNode, this->getMarkedPtr(nextNode, 1));
+        if (!this->isMarkedOnPosition(node->successor, 1))
             this->helpFlagged(node, nextNode->successor);
     } while (!this->isMarkedOnPosition(node->successor, 1));
 }
@@ -199,13 +201,13 @@ Node *SkipList::tryFlagNode(Node *previousNode, Node *targetNode) {
     while (true) {
         if (this->isMarkedOnPosition(unmarkedPrevious->successor, 0)) ///vorgaenger ist bereits flagged
             return this->buildResult(previousNode, SKL_IN, false);
-        if (this->isMarkedOnPosition(targetNode, 0)) ///zu markierender Node is bereits flagged
-            return this->buildResult(previousNode, SKL_IN, false);
         Node *unmarkedTarget = this->getUnmarkedPtr(targetNode);
-        if (unmarkedPrevious->successor.compare_exchange_weak(unmarkedTarget, this->getMarkedPtr(unmarkedTarget, 0))) {
+        if (unmarkedPrevious->successor.compare_exchange_strong(unmarkedTarget, this->getMarkedPtr(unmarkedTarget, 0))) {
             return this->buildResult(previousNode, SKL_IN, true);
-        }
-        while (this->isMarkedOnPosition(previousNode, 1)) {
+        } else if (this->isMarkedOnPosition(targetNode, 0)) ///zu markierender Node is bereits flagged
+            return this->buildResult(previousNode, SKL_IN, false);
+
+        while (this->isMarkedOnPosition(getUnmarkedPtr(previousNode)->successor, 1)) {
             unmarkedPrevious = this->getUnmarkedPtr(unmarkedPrevious->backLink);
             previousNode = unmarkedPrevious->backLink;
         }
@@ -262,12 +264,15 @@ int SkipList::findStart(int level, Node **resultNode) {
  */
 Node *SkipList::searchRight(int key, Node *currentNode, Node **nextNode) {
     (*nextNode) = this->getUnmarkedPtr(currentNode)->successor;
-    while ((*nextNode)->value < key) {
+    while ((*nextNode)->value <= key) {
         Node *root = (*nextNode)->towerRoot;
-        while (this->isMarkedOnPosition(root, 1)) {
+        while ((root != nullptr ) && this->isMarkedOnPosition(root->successor, 1)) {
             Node *result = this->tryFlagNode(currentNode, (*nextNode));
+            currentNode = getUnmarkedPtr(result);
             if (this->isIN(result))
                 this->helpFlagged(currentNode, (*nextNode));
+            (*nextNode) = getUnmarkedPtr(getUnmarkedPtr(currentNode)->successor);
+            root = (*nextNode)->towerRoot;
         }
         if ((*nextNode)->value <= key) {
             currentNode = (*nextNode);
@@ -281,7 +286,7 @@ bool SkipList::remove(int key) {
     Node *prevNode;
     Node *delNode;
 
-    prevNode = this->searchToLevel(key, 1, &delNode);
+    prevNode = this->searchToLevel(key - 1, 1, &delNode);
     if (this->getUnmarkedPtr(delNode)->value != key)
         return false;
     if (!removeNode(prevNode, delNode))

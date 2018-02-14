@@ -15,10 +15,40 @@ int main(int numberOfArguments, char *arguments[]) {
 //    mcp_init(numberOfArguments, arguments);
 
     SkipList list(5);
-    for(int i = 0; i< 100; i++){
-        int bla = ((rand() % 2) * (rand() % (list.maxLevel - 2))) + 1;
-        std::cout << bla << (bla >= list.maxLevel? " BIGGER!!!": "") << std::endl;
+
+    long insertCount = 0;
+    long delCount = 0;
+
+    for (int i = 1; i < 10; i++) {
+        if (list.insert(i))
+            insertCount++;
+        if (list.insert(i))
+            insertCount++;
+        if (list.remove(i))
+            delCount++;
+        if (list.remove(i))
+            delCount++;
     }
+
+    std::cout << "inserts: " << insertCount << " | deletes: " << delCount << std::endl;
+
+    Node *cur = list.headRoot;
+    while (cur != nullptr) {
+
+        if (list.isMarkedOnPosition(cur->successor, 1))
+            std::cout << " |";
+
+        std::cout << cur->value;
+
+        if (list.isMarkedOnPosition(cur->successor, 0))
+            std::cout << "| ";
+        std::cout << " -> ";
+
+        cur = list.getUnmarkedPtr(cur->successor);
+    }
+
+    std::cout << "NULL";
+
 
 //    std::cout << "max: " << std::numeric_limits<int>::max() << std::endl
 //              << "min: " << std::numeric_limits<int>::min() << std::endl;
@@ -35,32 +65,12 @@ int main(int numberOfArguments, char *arguments[]) {
 //    newNode3->successor = newNode5;
 //    newNode5->successor = tailRoot;
 //
-//    Node *left, *right;
-//    left = list.searchToLevel(3, 1, &right);
-//    std::cout << "left: " << left->value << " | right: " << right->value << std::endl;
 //
 //
 //    if (list.remove(1))
 //        std::cout << "removed 1" << std::endl;
 //    else
 //        std::cout << "NOT removed 1" << std::endl;
-//
-//    Node *curNode = headRoot;
-//    int nodeCount = 0;
-//    while (curNode != nullptr) {
-//        nodeCount++;
-//
-//        if (list.isMarkedOnPosition(curNode->successor, 1))
-//            std::cout << "|";
-//        std::cout << curNode->value;
-//        if (list.isMarkedOnPosition(curNode->successor, 0))
-//            std::cout << "|";
-//
-//        std::cout << " -> ";
-//        curNode = list.getUnmarkedPtr(curNode->successor);
-//    }
-//
-//    std::cout << "NULL" << std::endl << "Node count: " << nodeCount << std::endl;
 
 //    int levelCount = 0;
 //    Node *currNode = list.headRoot;

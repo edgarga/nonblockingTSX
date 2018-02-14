@@ -7,6 +7,7 @@
 
 
 #include "node.h"
+#include "./../../benchmark/include/benchmark/benchmark.h"
 
 
 class List {
@@ -24,9 +25,9 @@ public:
 
     ~List();
 
-    bool insert(int key);
+    bool insert(int key, benchmark::State &state);
 
-    bool del(int searchKey);
+    bool del(int searchKey, benchmark::State &state);
 
     Node *search(int key, Node **leftNode);
 
