@@ -13,18 +13,16 @@ std::atomic<int> deleteCount;
 
 void insertWorker(SkipList &list, int pushCount, int threadId) {
     for (int i = 0; i < pushCount; i++) {
-        if(list.insert(rand() % 10000))
+        if(list.insert(rand() % 10))
             insertCount++;
     }
-    std::cout << "end inserts: " << threadId << std::endl;
 }
 
 void deleteWorker(SkipList &list, int delCount, int threadId){
     for (int i = 0; i < delCount; i++) {
-        if(list.remove(rand() % 10000))
+        if(list.remove(rand() % 10, threadId))
             deleteCount++;
     }
-    std::cout << "end deletes: " << threadId << std::endl;
 }
 
 
@@ -37,13 +35,13 @@ int main(int numberOfArguments, char *arguments[]) {
     SkipList list(5);
 
 
-    for (int i = 0; i < 100; ++i) {
-        list.insert(i);
-
-    }
+//    for (int i = 0; i < 100; ++i) {
+//        list.insert(i);
+//
+//    }
 
     Node *prev, *delNode;
-    prev = list.searchToLevel(5 - 1, 1, &delNode);
+    prev = list.searchToLevel(5 - 1, 1, &delNode, -7);
     std::cout << "prev: " << list.getNode(prev)->value << " -> " << "del: " << list.getNode(delNode)->value << std::endl;
 //    list.remove(8);
     std::vector<std::thread> tv;

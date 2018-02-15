@@ -1,6 +1,6 @@
 *.o
 .idea
-log
+*log*
 cmake-build-debug
 CMakeLists.txt
 perf.*

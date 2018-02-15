@@ -37,20 +37,20 @@ public:
     bool isDuplicateKey (Node *result);
 
     Node *search(int key, Node **nextNode);
-    Node *searchToLevel(int key, int level, Node **nextReturnNode);
+    Node *searchToLevel(int key, int level, Node **nextReturnNode, int threadId);
     int findStart(int level, Node **resultNode);
-    Node *searchRight(int key, Node *currentNode, Node **returnNode);
+    Node *searchRight(int key, Node *currentNode, Node **returnNode, int threadId);
     Node * tryFlagNode(Node *previousNode, Node *targetNode);
 
     bool insert(int key);
     Node *insertNode(Node *newNode, Node *prevNode, Node *nextNode, Node **result);
 
-    bool remove(int key);
-    bool removeNode(Node *prevNode, Node *delNode);
+    bool remove(int key, int threadId);
+    bool removeNode(Node *prevNode, Node *delNode, int threadId);
 
-    bool helpMarked(Node *prevNode, Node *delNode);
-    bool helpFlagged(Node *prevNode, Node *delNode);
-    void tryMark(Node *delNode);
+    bool helpMarked(Node *prevNode, Node *delNode, int threadId);
+    bool helpFlagged(Node *prevNode, Node *delNode, int threadId);
+    void tryMark(Node *delNode, int threadId);
 
 
 

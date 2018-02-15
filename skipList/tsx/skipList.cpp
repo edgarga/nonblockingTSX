@@ -18,6 +18,9 @@ SkipList::SkipList(int levelCount) : maxLevel(levelCount) {
     this->tailRoot = lowerTail;
     lowerHead->successor = lowerTail;
 
+    lowerHead->towerRoot = lowerHead;
+    lowerTail->towerRoot = lowerTail;
+
     for (int i = 0; i < this->maxLevel; i++) {
         Node *newHead = new Node(true, true);
         newHead->level = i + 2;
@@ -32,6 +35,9 @@ SkipList::SkipList(int levelCount) : maxLevel(levelCount) {
 
         lowerHead = newHead;
         lowerTail = newTail;
+
+        lowerHead->towerRoot = lowerHead;
+        lowerTail->towerRoot = lowerTail;
     }
 
     lowerHead->limitUp = lowerHead;
@@ -42,7 +48,7 @@ SkipList::SkipList(int levelCount) : maxLevel(levelCount) {
 
 bool SkipList::insert(int key) {
     Node *prevNode, *nextNode;
-    prevNode = searchToLevel(key, 1, &nextNode);
+    prevNode = searchToLevel(key, 1, &nextNode, -21);
 
     if (prevNode->value == key)
         return false;
@@ -54,14 +60,15 @@ bool SkipList::insert(int key) {
 
     int currentLevel = 1;
     while (true) {
-
         Node *result;
+        if (newNode->towerRoot == nullptr)
+            std::cout << "newN.root = null " << currentLevel << std::endl;
         prevNode = insertNode(newNode, prevNode, nextNode, &result);
         if (isDuplicateKey(result) && currentLevel == 1)
             return false;
         if (isMarkedOnPosition(newRootNode->successor, 1)) {
             if ((getNode(result) == newNode) && (newNode != newRootNode))
-                removeNode(prevNode, newNode);
+                removeNode(prevNode, newNode, -22);
             return true;
         }
 
@@ -74,7 +81,7 @@ bool SkipList::insert(int key) {
         newNode = new Node(key);
         newNode->down = lastNode;
         newNode->towerRoot = newRootNode;
-        prevNode = searchToLevel(key, currentLevel, &nextNode);
+        prevNode = searchToLevel(key, currentLevel, &nextNode, -23);
     }
 
 
@@ -87,56 +94,58 @@ Node *SkipList::insertNode(Node *newNode, Node *prevNode, Node *nextNode, Node *
         return prevNode;
     }
 
+    int i = 0;
     while (true) {
-
         Node *nextOfPrev = getNode(prevNode)->successor;
         if (isMarkedOnPosition(nextOfPrev, 0))
-            helpFlagged(prevNode, getNode(getNode(nextOfPrev)->successor));
+            helpFlagged(prevNode, getNode(nextOfPrev), -31);
         else {
             newNode->successor = getNode(nextNode);
             Node *nextUnmarked = getNode(nextNode);
+
             if (getNode(prevNode)->successor.compare_exchange_strong(nextUnmarked, newNode)) {
                 (*result) = newNode;
                 return prevNode;
             } else {
                 if (isMarkedOnPosition(getNode(prevNode)->successor, 0))
-                    helpFlagged(prevNode, getNode(getNode(prevNode)->successor));
+                    helpFlagged(prevNode, getNode(getNode(prevNode)->successor), -32);
                 while (isMarkedOnPosition(getNode(prevNode)->successor, 1)) {
                     prevNode = getNode(prevNode)->backLink;
                 }
             }
 
         }
-        prevNode = searchRight(newNode->value, prevNode, &nextNode);
+        prevNode = searchRight(newNode->value, prevNode, &nextNode, -24);
         if (getNode(prevNode)->value == newNode->value) {
             size_t resultSequence = SKL_DUPLICATE_KEY;
             (*result) = (Node *) resultSequence;
             return prevNode;
         }
+        i++;
     }
 
 
 }
 
-bool SkipList::remove(int key) {
+bool SkipList::remove(int key, int threadId) {
     Node *prevNode;
     Node *delNode;
 
-    prevNode = this->searchToLevel(key - 1, 1, &delNode);
-    if (this->getNode(delNode)->value != key)
+    prevNode = searchToLevel(key - 1, 1, &delNode, threadId);
+    if (getNode(delNode)->value != key || !removeNode(prevNode, delNode, threadId)) {
+
         return false;
-    if (!removeNode(prevNode, delNode))
-        return false;
-    searchToLevel(key, 2, &delNode);
+    }
+    searchToLevel(key, 2, &delNode, threadId);
     return true;
 
 }
 
-bool SkipList::removeNode(Node *prevNode, Node *delNode) {
+bool SkipList::removeNode(Node *prevNode, Node *delNode, int threadId) {
     Node *result = this->tryFlagNode(prevNode, delNode);
     prevNode = this->getNode(result);
     if (isIN(result)) {
-        helpFlagged(prevNode, delNode);
+        helpFlagged(prevNode, delNode, threadId);
     }
     if (!isSuccess(result))
         return false;
@@ -145,24 +154,24 @@ bool SkipList::removeNode(Node *prevNode, Node *delNode) {
 
 Node *SkipList::search(int key, Node **nextNode) {
     Node *curNode;
-    curNode = searchToLevel(key, 1, nextNode);
+    curNode = searchToLevel(key, 1, nextNode, -66);
     if (getNode(curNode)->value == key) {
         return curNode;
     } else
         return nullptr;
 }
 
-Node *SkipList::searchToLevel(int key, int level, Node **nextReturnNode) {
+Node *SkipList::searchToLevel(int key, int level, Node **nextReturnNode, int threadId) {
     Node *next;
     Node *curNode;
     int currentLevel = findStart(level, &curNode);
     while (currentLevel > level) {
-        curNode = searchRight(key, curNode, &next);
+        curNode = searchRight(key, curNode, &next, threadId);
         curNode = getNode(curNode)->down;
         currentLevel--;
     }
-    nextReturnNode = &next;
-    curNode = searchRight(key, curNode, nextReturnNode);
+    (*nextReturnNode) = next;
+    curNode = searchRight(key, curNode, nextReturnNode, threadId);
     return curNode;
 }
 
@@ -170,7 +179,7 @@ Node *SkipList::searchToLevel(int key, int level, Node **nextReturnNode) {
 int SkipList::findStart(int level, Node **resultNode) {
     (*resultNode) = this->headRoot;
     int currentLevel = 1;
-    Node *upRightNode = getNode((*resultNode))->limitUp;
+    Node *upRightNode = getNode(*resultNode)->limitUp;
     upRightNode = getNode(upRightNode->successor);
 
     while ((upRightNode->value != std::numeric_limits<int>::max()) || (currentLevel < level)) {
@@ -190,49 +199,70 @@ int SkipList::findStart(int level, Node **resultNode) {
  * @param returnNode
  * @return
  */
-Node *SkipList::searchRight(int key, Node *currentNode, Node **nextNode) {
+Node *SkipList::searchRight(int key, Node *currentNode, Node **nextNode, int threadId) {
     (*nextNode) = this->getNode(currentNode)->successor;
     (*nextNode) = getNode(*nextNode);
+    int i = 0;
     while ((*nextNode)->value <= key) {
         Node *root = (*nextNode)->towerRoot;
-        while ((root != nullptr) && this->isMarkedOnPosition(root->successor, 1)) {
+        while (this->isMarkedOnPosition(root->successor, 1)) {
             Node *result = this->tryFlagNode(currentNode, (*nextNode));
             currentNode = getNode(result);
             if (isIN(result))
-                helpFlagged(currentNode, (*nextNode));
+                helpFlagged(currentNode, (*nextNode), threadId);
+
             (*nextNode) = getNode(getNode(currentNode)->successor);
+
             root = (*nextNode)->towerRoot;
         }
         if ((*nextNode)->value <= key) {
             currentNode = (*nextNode);
             (*nextNode) = getNode(getNode(currentNode)->successor);
         }
+        i++;
     }
     return currentNode;
 }
 
-bool SkipList::helpMarked(Node *prevNode, Node *delNode) {
+bool SkipList::helpMarked(Node *prevNode, Node *delNode, int threadId) {
     Node *nextUnmarked = getNode(getNode(delNode)->successor);
-    Node *nextOfPrev = getNode(prevNode)->successor;
     Node *flaggedDelNode = getMarkedPtr(delNode, 0);
-    return getNode(prevNode)->successor.compare_exchange_strong(flaggedDelNode, nextUnmarked);
+    bool is = false;
+    if (isMarkedOnPosition(flaggedDelNode, 0) && flaggedDelNode != delNode)
+        is = true;
+    bool wasSuccessful = getNode(prevNode)->successor.compare_exchange_strong(flaggedDelNode, nextUnmarked); //NULL
+//    if(getNode(prevNode)->value != std::numeric_limits<int>::max() && nextUnmarked == nullptr)
+//        std::cout << " new node succ null " << std::endl;
+
+
+    return wasSuccessful;
+
 }
 
-bool SkipList::helpFlagged(Node *prevNode, Node *delNode) {
+bool SkipList::helpFlagged(Node *prevNode, Node *delNode, int threadId) {
+    getNode(delNode)->backLink = getNode(prevNode);
+    if (!isMarkedOnPosition(getNode(delNode)->successor, 1)) {
 
-    getNode(delNode)->backLink = prevNode;
-    if (!isMarkedOnPosition(getNode(delNode)->successor, 1))
-        tryMark(delNode);
-    return helpMarked(prevNode, delNode);
+        tryMark(delNode, threadId);
+    }
+    return helpMarked(prevNode, delNode, threadId);
 }
 
-void SkipList::tryMark(Node *delNode) {
+void SkipList::tryMark(Node *delNode, int threadId) {
+    int i = 0;
+    if(getNode(delNode)->isLimitingNode)
+        std::cout << "del node is Limit" << std::endl;
     do {
-        Node *nextNode = getNode(getNode(delNode)->successor);
-        if (!getNode(delNode)->successor.compare_exchange_strong(nextNode, getMarkedPtr(nextNode, 1)))
-            if (isMarkedOnPosition(getNode(delNode)->successor, 0))
-                helpFlagged(getNode(delNode), nextNode->successor);
-    } while (!this->isMarkedOnPosition(getNode(delNode)->successor, 1));
+        Node *nextNodeUnmarked = getNode(getNode(delNode)->successor);
+
+        if (!getNode(delNode)->successor.compare_exchange_strong(nextNodeUnmarked, getMarkedPtr(nextNodeUnmarked, 1))) {
+            if (!isMarkedOnPosition(getNode(delNode)->successor, 1) &&
+                isMarkedOnPosition(getNode(delNode)->successor, 0)) {
+                helpFlagged(getNode(delNode), getNode(getNode(delNode)->successor), threadId);
+            }
+        }
+        i++;
+    } while (!isMarkedOnPosition(getNode(delNode)->successor, 1));
 }
 
 /**
@@ -248,28 +278,31 @@ void SkipList::tryMark(Node *delNode) {
  */
 Node *SkipList::tryFlagNode(Node *previousNode, Node *targetNode) {
 //    Node *unmarkedPrevious = this->getNode(previousNode);
+    if (getNode(previousNode)->isLimitingNode && getNode(targetNode)->isHeadNode)
+        std::cout << "trying flagging limit node" << std::endl;
     while (true) {
-        if (this->isMarkedOnPosition(getNode(previousNode)->successor, 0)) ///vorgaenger ist bereits flagged
-            return this->buildResult(previousNode, SKL_IN, false);
-        Node *unmarkedTarget = this->getNode(targetNode);
+        Node *prevUnmarked = getNode(previousNode);
+        Node *sucOfPref = prevUnmarked->successor;
+        if (getNode(sucOfPref) == getNode(targetNode) &&
+            isMarkedOnPosition(getNode(sucOfPref)->successor, 0)) ///vorgaenger ist bereits flagged
+            return buildResult(previousNode, SKL_IN, false);
+        Node *unmarkedTarget = getNode(targetNode);
         if (getNode(previousNode)->successor.compare_exchange_strong(unmarkedTarget,
                                                                      this->getMarkedPtr(unmarkedTarget, 0))) {
-            return this->buildResult(previousNode, SKL_IN, true);
+            return buildResult(previousNode, SKL_IN, true);
         }
 
-        Node *succOfPrev = getNode(previousNode)->successor;
-        if (getNode(previousNode)->successor == succOfPrev &&
-            this->isMarkedOnPosition(succOfPrev, 0)) ///zu markierender Node is bereits flagged
-            return this->buildResult(previousNode, SKL_IN, false);
+        if (getNode(getNode(previousNode)->successor) == getNode(targetNode) &&
+            isMarkedOnPosition(getNode(previousNode)->successor, 0)) ///zu markierender Node is bereits flagged
+            return buildResult(previousNode, SKL_IN, false);
 
-        while (this->isMarkedOnPosition(getNode(previousNode)->successor, 1)) {
-//            getNode(previousNode) = this->getNode(getNode(previousNode)->backLink);
+        while (isMarkedOnPosition(getNode(previousNode)->successor, 1)) {
             previousNode = getNode(previousNode)->backLink;
         }
         Node *delNode;
-        previousNode = this->searchRight(targetNode->value - 1, previousNode, &delNode);
-        if (delNode != previousNode)
-            return this->buildResult(previousNode, SKL_DELETED, false);
+        previousNode = searchRight(getNode(targetNode)->value - 1, previousNode, &delNode, -5);
+        if (getNode(delNode) != getNode(previousNode))
+            return buildResult(previousNode, SKL_DELETED, false);
     }
 }
 
