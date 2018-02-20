@@ -5,6 +5,7 @@
 #include <iostream>
 #include <limits>
 #include <chrono>
+#include <x86intrin.h>
 #include "list.h"
 
 List::List() {
@@ -78,10 +79,11 @@ bool List::insert(int key, benchmark::State &state) {
 
             while (absoluteTries < this->absoluteTries_Insert) {
                 absoluteTries++;
-//                state.counters["tsxInsertTries"]++;
+                unsigned long long int start = __rdtsc();
+                state.counters["tsxInsertTries"]++;
                 LockElision eLock;
                 if ((status = eLock.startTransaction()) == _XBEGIN_STARTED) { /// check if transaction was started
-                    if ((leftNode->next != rightNode) ||
+                    if ((leftNode->next != rightNode) || // areMarkedInbetween(leftNode, rightNode) ||
                         this->isMarkedPtr(leftNode) || this->isMarkedPtr(rightNode)) {
 
                         break;
@@ -94,13 +96,13 @@ bool List::insert(int key, benchmark::State &state) {
                 }
                 if ((eLock.endTransaction() &&
                      (status == _XBEGIN_STARTED || status == 0))) { /// return if insert was successful
-//                    state.counters["tsxInsertSuccess"]++;
+                    state.counters["tsxInsertSuccess"]++;
                     return true;
                 }
 
 
                 if (status & _XABORT_RETRY) { /// do nothing if can be retried
-//                    state.counters["tsxInsertAborts"]++;
+                    state.counters["tsxInsertAborts"]++;
                 } else {
                     break; /// new search will be initiated
                 }
@@ -146,7 +148,6 @@ Node *List::tsxSearch(int key, Node **leftNode) {
         tNext = t_frontSearch->next;
 
         if (searchBack) {
-//            std::cout << "a" << std::endl;
             if (tPrior == this->head || t_backSearch->key < key) {
                 searchBack = false;
             } else {
@@ -156,8 +157,7 @@ Node *List::tsxSearch(int key, Node **leftNode) {
                     tNext = tPrior->next;
 //                    tNext = t_backSearch;
                     searchBack = false;
-//                    std::cout << "tsx" << std::endl;
-                    goto edgar;
+                    goto nextIteration;
 //                    return t_backSearch;
                 }
                 if (!this->isMarkedPtr(tPrior->next))
@@ -166,7 +166,7 @@ Node *List::tsxSearch(int key, Node **leftNode) {
             }
         }
 
-        edgar:;
+        nextIteration:;
     } while (isMarkedPtr(tNext) ||
              (t_frontSearch->key < key));
     return t_frontSearch;
@@ -275,7 +275,7 @@ bool List::del(int searchKey, benchmark::State &state) {
 //                state.counters["tsxDelTries"]++;
                 LockElision eLock;
                 if ((status = eLock.startTransaction()) == _XBEGIN_STARTED) { /// check if transaction was started
-                    if ((leftNode->next != rightNode) || rightNode->next != rightNextNode ||
+                    if ((leftNode->next != rightNode) || rightNode->next != rightNextNode  || // areMarkedInbetween(rightNode, leftNode) ||
                         this->isMarkedPtr(rightNextNode) || this->isMarkedPtr(leftNode)) {
 
                         break;
@@ -287,7 +287,7 @@ bool List::del(int searchKey, benchmark::State &state) {
                 }
                 if ((eLock.endTransaction() && status == _XBEGIN_STARTED)) {
 //                    delete rightNode;
-//                    state.counters["tsxDelSucc"]++;
+                    state.counters["tsxDelSucc"]++;
 //                    auto end = std::chrono::high_resolution_clock::now();
 //
 //                    state.counters["tsxInsertTryTimeAvg"] +=

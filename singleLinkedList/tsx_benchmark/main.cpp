@@ -3,12 +3,13 @@
 #include <vector>
 #include "list.h"
 #include "mcp.h"
-#include "./../../benchmark/include/benchmark/benchmark.h"
+#include "/usr/local/include/benchmark/benchmark.h"
 
 std::atomic<int> positionKeyForStackFront;
 
 void pushWorker(List &list, int insertCount, int highestPossibleInsertKey, benchmark::State &state) {
     for (int i = 0; i < insertCount; i++) {
+        state.counters["insertTries"]++;
         if (list.insert(rand() % highestPossibleInsertKey, state))
             state.counters["succInserts"]++;
     }
@@ -18,6 +19,7 @@ void pushWorker(List &list, int insertCount, int highestPossibleInsertKey, bench
 void deleteWorker(List &list, int deleteCount, int highestPossibleDeleteKey, benchmark::State &state) {
     double counter = 0;
     for (int i = 0; i < deleteCount; i++) {
+        state.counters["deleteTries"]++;
         if (list.del(rand() % highestPossibleDeleteKey, state))
             state.counters["succDeletes"]++;
     }
@@ -45,8 +47,8 @@ void doRandomNumberTest(List &list, benchmark::State &state) {
     int numberElements = state.range(1);
     std::vector<std::thread> tv;
     for (int i = 0; i < numThreads; i++) {
-        tv.push_back(std::thread(pushWorker, std::ref(list), numberElements, numberElements, std::ref(state)));
-        tv.push_back(std::thread(deleteWorker, std::ref(list), numberElements, numberElements, std::ref(state)));
+        tv.push_back(std::thread(pushWorker, std::ref(list), numberElements, state.range(3), std::ref(state)));
+        tv.push_back(std::thread(deleteWorker, std::ref(list), numberElements, state.range(3), std::ref(state)));
     }
     for (auto &t: tv)
         t.join();
@@ -105,7 +107,7 @@ void randomNumberTest_withTsxSearch(benchmark::State &state) {
     state.counters["insertTries"] /= state.iterations();
     state.counters["tsxInsertSuccess"] /= state.iterations();
     state.counters["tsxInsertTries"] /= state.iterations();
-    state.counters["insertTries"] /= state.iterations();
+    state.counters["deleteTries"] /= state.iterations();
 
     state.counters["tsxIT/it"] = state.counters["tsxInsertTries"] / state.counters["insertTries"];
     state.counters["tsxIT/itSucc"] = state.counters["tsxInsertTries"] / state.counters["succInserts"];
@@ -158,16 +160,16 @@ void stackFront_WithTsxSearch(benchmark::State &state) {
 BENCHMARK(randomNumberTest_withTsxSearch)
         ->Unit(benchmark::kMicrosecond)
         ->Iterations(10)
-        ->Args({1, 10000, 0})
-        ->Args({2, 10000, 2})
-        ->Args({3, 10000, 2})
-//        ->Args({4, 1000, 2})
-//        ->Args({5, 1000, 2})
-//        ->Args({6, 1000, 2})
-//        ->Args({7, 1000, 2})
-//        ->Args({8, 1000, 2})
-//        ->Args({9, 1000, 2})
-//        ->Args({10, 1000, 2})
+        ->Args({4, 10000, 0, 1000})
+        ->Args({4, 10000, 0, 2000})
+        ->Args({4, 10000, 0, 3000})
+        ->Args({4, 10000, 0, 4000})
+        ->Args({4, 10000, 0, 5000})
+        ->Args({4, 10000, 0, 6000})
+        ->Args({4, 10000, 0, 7000})
+        ->Args({4, 10000, 0, 8000})
+        ->Args({4, 10000, 0, 9000})
+        ->Args({4, 10000, 0, 10000})
 ;
 //
 //BENCHMARK(stackFront)

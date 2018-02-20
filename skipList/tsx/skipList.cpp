@@ -102,13 +102,19 @@ Node *SkipList::insertNode(Node *newNode, Node *prevNode, Node *nextNode, Node *
         else {
             newNode->successor = getNode(nextNode);
             Node *nextUnmarked = getNode(nextNode);
+            bool nextIsMarked = isMarked(nextUnmarked);
+            int val = nextUnmarked->value;
 
             if (getNode(prevNode)->successor.compare_exchange_strong(nextUnmarked, newNode)) {
                 (*result) = newNode;
                 return prevNode;
             } else {
+                Node *prevSucc = (getNode(prevNode)->successor);
+                Node *un = getNode(prevSucc);
+                size_t pSPtr = (size_t) prevSucc;
+
                 if (isMarkedOnPosition(getNode(prevNode)->successor, 0))
-                    helpFlagged(prevNode, getNode(getNode(prevNode)->successor), -32);
+                    helpFlagged(prevNode, un, -32);
                 while (isMarkedOnPosition(getNode(prevNode)->successor, 1)) {
                     prevNode = getNode(prevNode)->backLink;
                 }
@@ -132,7 +138,9 @@ bool SkipList::remove(int key, int threadId) {
     Node *delNode;
 
     prevNode = searchToLevel(key - 1, 1, &delNode, threadId);
-    if (getNode(delNode)->value != key || !removeNode(prevNode, delNode, threadId)) {
+    if (getNode(delNode)->value != key)
+        return false;
+    if (!removeNode(prevNode, delNode, threadId)) {
 
         return false;
     }
@@ -200,11 +208,12 @@ int SkipList::findStart(int level, Node **resultNode) {
  * @return
  */
 Node *SkipList::searchRight(int key, Node *currentNode, Node **nextNode, int threadId) {
-    (*nextNode) = this->getNode(currentNode)->successor;
+    (*nextNode) = getNode(currentNode)->successor;
     (*nextNode) = getNode(*nextNode);
     int i = 0;
     while ((*nextNode)->value <= key) {
         Node *root = (*nextNode)->towerRoot;
+        int j = 0;
         while (this->isMarkedOnPosition(root->successor, 1)) {
             Node *result = this->tryFlagNode(currentNode, (*nextNode));
             currentNode = getNode(result);
@@ -214,6 +223,7 @@ Node *SkipList::searchRight(int key, Node *currentNode, Node **nextNode, int thr
             (*nextNode) = getNode(getNode(currentNode)->successor);
 
             root = (*nextNode)->towerRoot;
+            j++;
         }
         if ((*nextNode)->value <= key) {
             currentNode = (*nextNode);
@@ -250,15 +260,15 @@ bool SkipList::helpFlagged(Node *prevNode, Node *delNode, int threadId) {
 
 void SkipList::tryMark(Node *delNode, int threadId) {
     int i = 0;
-    if(getNode(delNode)->isLimitingNode)
+    if (getNode(delNode)->isLimitingNode)
         std::cout << "del node is Limit" << std::endl;
     do {
-        Node *nextNodeUnmarked = getNode(getNode(delNode)->successor);
-
+        Node *nextOfDel = getNode(delNode)->successor;
+        Node *nextNodeUnmarked = getNode(nextOfDel);
         if (!getNode(delNode)->successor.compare_exchange_strong(nextNodeUnmarked, getMarkedPtr(nextNodeUnmarked, 1))) {
-            if (!isMarkedOnPosition(getNode(delNode)->successor, 1) &&
-                isMarkedOnPosition(getNode(delNode)->successor, 0)) {
-                helpFlagged(getNode(delNode), getNode(getNode(delNode)->successor), threadId);
+            if (!isMarkedOnPosition(nextOfDel, 1) &&
+                isMarkedOnPosition(nextOfDel, 0)) {
+                helpFlagged(getNode(delNode), nextNodeUnmarked, threadId);
             }
         }
         i++;
@@ -335,7 +345,7 @@ SkipList::~SkipList() {
 }
 
 bool SkipList::isMarked(size_t ptr) {
-    return (ptr & 3) != 0;
+    return (ptr & 15) != 0;
 }
 
 bool SkipList::isMarked(Node *node) {

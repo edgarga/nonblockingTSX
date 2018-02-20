@@ -13,14 +13,14 @@ std::atomic<int> deleteCount;
 
 void insertWorker(SkipList &list, int pushCount, int threadId) {
     for (int i = 0; i < pushCount; i++) {
-        if(list.insert(rand() % 10))
+        if (list.insert(rand() % 10))
             insertCount++;
     }
 }
 
-void deleteWorker(SkipList &list, int delCount, int threadId){
+void deleteWorker(SkipList &list, int delCount, int threadId) {
     for (int i = 0; i < delCount; i++) {
-        if(list.remove(rand() % 10, threadId))
+        if (list.remove(rand() % 10, threadId))
             deleteCount++;
     }
 }
@@ -42,9 +42,17 @@ int main(int numberOfArguments, char *arguments[]) {
 
     Node *prev, *delNode;
     prev = list.searchToLevel(5 - 1, 1, &delNode, -7);
-    std::cout << "prev: " << list.getNode(prev)->value << " -> " << "del: " << list.getNode(delNode)->value << std::endl;
+    std::cout << "prev: " << list.getNode(prev)->value << " -> " << "del: " << list.getNode(delNode)->value
+              << std::endl;
 //    list.remove(8);
     std::vector<std::thread> tv;
+
+    size_t ptr = 0x7f08a027ffd1;
+    Node *node = (Node *) ptr;
+    std::cout << std::hex << (size_t) node << " is Marked: " << (list.isMarked(node) ? "true" : "false")
+              << " unmarked: " << list.getNode(node) << " | unmarked is marked=: "
+              << (list.isMarked(list.getNode(node)) ? "true" : "false") << std::dec << std::endl;
+
 
     for (int i = 0; i < num_threads; i++) {
         tv.push_back(std::thread(insertWorker, std::ref(list), num_elements, i));
@@ -86,7 +94,7 @@ int main(int numberOfArguments, char *arguments[]) {
 //        std::cout << " -> ";
 //
         cur = list.getNode(cur->successor);
-        count ++;
+        count++;
     }
 
     std::cout << "NULL" << std::endl;
