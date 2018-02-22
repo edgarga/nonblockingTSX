@@ -53,7 +53,7 @@ public:
     void tryMark(Node *delNode, int threadId);
 
 
-
+    void print();
 
 };
 

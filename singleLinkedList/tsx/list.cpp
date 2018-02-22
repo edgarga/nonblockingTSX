@@ -7,6 +7,7 @@
 #include "list.h"
 
 List::List() {
+
     this->absoluteTries_Insert = 50;
     this->absoluteTries_Delete = 50;
 
@@ -77,10 +78,10 @@ bool List::insert(int key, int threadId) {
 
             while (absoluteTries < this->absoluteTries_Insert) {
                 absoluteTries++;
-
+                unsigned long long int start = __rdtsc();
                 LockElision eLock;
                 if ((status = eLock.startTransaction()) == _XBEGIN_STARTED) { /// check if transaction was started
-                    if ((leftNode->next != rightNode ) ||
+                    if ((leftNode->next != rightNode) ||
                         this->isMarkedPtr(leftNode) || this->isMarkedPtr(rightNode)) {
 
                         break;
@@ -97,13 +98,21 @@ bool List::insert(int key, int threadId) {
                         this->triesForSuccessfulInsertTSX[threadId] += absoluteTries;
                         this->absoluteInsertTsxTries[threadId] += absoluteTries;
                         this->insertsByTSX[threadId]++;
+                        unsigned long long int ticks = __rdtsc() - start;
+                        this->tsxInsertTimeCount[threadId]++;
+                        this->insertTicks[threadId] += ticks;
                     }
                     return true;
                 }
 
 
                 if (status & _XABORT_RETRY) { /// do nothing if can be retried
-                    if (threadId >= 0) { this->abortedTsxInsertTry[threadId]++; }
+                    if (threadId >= 0) {
+                        this->abortedTsxInsertTry[threadId]++;
+                        unsigned long long int ticks = __rdtsc() - start;
+                        this->tsxInsertTimeCount[threadId]++;
+                        this->insertTicks[threadId] += ticks;
+                    }
                 } else {
                     break; /// new search will be initiated
                 }
@@ -250,7 +259,7 @@ void List::print() {
 }
 
 List::~List() {
-std::cout << "deleting list" << std::endl;
+    std::cout << "deleting list" << std::endl;
 //    delete this->tail;
 //    delete this->head;
 //    delete this->useTsxSearch;
@@ -278,7 +287,7 @@ bool List::del(int searchKey, int threadId) {
                 absoluteTries++;
                 LockElision eLock;
                 if ((status = eLock.startTransaction()) == _XBEGIN_STARTED) { /// check if transaction was started
-                    if ((leftNode->next != rightNode ) || rightNode->next != rightNextNode ||
+                    if ((leftNode->next != rightNode) || rightNode->next != rightNextNode ||
                         this->isMarkedPtr(rightNextNode) || this->isMarkedPtr(leftNode)) {
 
                         break;
@@ -340,10 +349,10 @@ bool List::del(int searchKey, int threadId) {
 bool List::isIncreasing() {
     Node *current = this->head;
     int lastValue = current->key;
-    while(current != this->tail){
+    while (current != this->tail) {
         current = current->next;
 
-        if(lastValue >= current->key)
+        if (lastValue >= current->key)
             return false;
     }
 

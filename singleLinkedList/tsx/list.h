@@ -6,6 +6,7 @@
 #define MUTEX_LIST_H
 
 
+#include <x86intrin.h>
 #include "node.h"
 
 
@@ -18,7 +19,8 @@ public:
     int *insertsByNonBlock, *insertsByTSX, *deletesByNonBlock, *deletesByTSX;
     long long *triesForSuccessfulDeleteTSX, *triesForSuccessfulInsertTSX;
     long long *absoluteDeleteTsxTries, *absoluteInsertTsxTries;
-    long long *abortedTsxDeleteTry, *abortedTsxInsertTry;
+    long long *abortedTsxDeleteTry, *abortedTsxInsertTry, *tsxInsertTimeCount;
+    unsigned long long int *insertTicks;
 
 //    Node *shortcuts [10];
 

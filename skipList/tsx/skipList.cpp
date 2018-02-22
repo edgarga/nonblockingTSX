@@ -151,6 +151,7 @@ bool SkipList::remove(int key, int threadId) {
 
 bool SkipList::removeNode(Node *prevNode, Node *delNode, int threadId) {
     Node *result = this->tryFlagNode(prevNode, delNode);
+    Node *resultNode = getNode(result);
     prevNode = this->getNode(result);
     if (isIN(result)) {
         helpFlagged(prevNode, delNode, threadId);
@@ -310,7 +311,7 @@ Node *SkipList::tryFlagNode(Node *previousNode, Node *targetNode) {
             previousNode = getNode(previousNode)->backLink;
         }
         Node *delNode;
-        previousNode = searchRight(getNode(targetNode)->value - 1, previousNode, &delNode, -5);
+        previousNode = searchRight(getNode(targetNode)->value - 1, getNode(previousNode), &delNode, -5);
         if (getNode(delNode) != getNode(previousNode))
             return buildResult(previousNode, SKL_DELETED, false);
     }
@@ -385,4 +386,25 @@ Node *SkipList::getMarkedPtr(Node *node, int markingPosition) {
 Node *SkipList::getMarkedPtr(size_t ptr, int markingPosition) {
     size_t markedPtr = ptr | (1 << markingPosition);
     return (Node *) markedPtr;
+}
+
+void SkipList::print() {
+    int count = 0;
+    Node *cur = this->headRoot;
+    while (cur != nullptr) {
+
+        if (isMarkedOnPosition(cur->successor, 1))
+            std::cout << " |";
+
+        std::cout << cur->value;
+
+        if (isMarkedOnPosition(cur->successor, 0))
+            std::cout << "| ";
+        std::cout << " -> ";
+
+        cur = this->getNode(cur->successor);
+        count++;
+    }
+
+    std::cout << "NULL" << std::endl;
 }

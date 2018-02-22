@@ -6,6 +6,27 @@
 #include "node.h"
 #include "skipList.h"
 
+void print(SkipList list){
+    int count = 0;
+    Node *cur = list.headRoot;
+    while (cur != nullptr) {
+
+        if (list.isMarkedOnPosition(cur->successor, 1))
+            std::cout << " |";
+
+        std::cout << cur->value;
+
+        if (list.isMarkedOnPosition(cur->successor, 0))
+            std::cout << "| ";
+        std::cout << " -> ";
+
+        cur = list.getNode(cur->successor);
+        count++;
+    }
+
+    std::cout << "NULL" << std::endl;
+}
+
 std::atomic<int> insertCount;
 
 std::atomic<int> deleteCount;
@@ -33,6 +54,13 @@ int main(int numberOfArguments, char *arguments[]) {
     deleteCount = 0;
 
     SkipList list(5);
+    list.print();
+    list.insert(0);
+    list.print();
+    list.remove(0, 1);
+    list.print();
+
+
 
 
 //    for (int i = 0; i < 100; ++i) {
@@ -164,3 +192,5 @@ int main(int numberOfArguments, char *arguments[]) {
 
     return 0;
 }
+
+
