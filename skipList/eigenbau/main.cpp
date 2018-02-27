@@ -25,7 +25,7 @@ int main() {
 //    Node *left;
 //    Node *right = list.search(5, &left, 0);
 
-    list.insert(20);
+    bool insertSuccess = list.insert(20);
 
     return 0;
 }

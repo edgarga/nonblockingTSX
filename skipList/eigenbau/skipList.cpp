@@ -60,24 +60,30 @@ bool SkipList::insert(int key) {
         Node *insertingNode = new Node(key);
         insertingNode->down = inserted;
         Node *left;
-        Node *right = search(key, &left, currentHeight);
+        bool wasInserted = false;
+        do {
 
-        /// Falls Schlüssel schon in aktueller Ebene vorhanden ODER
-        /// root des aktuellen Towers zwischenzeitlich gelöscht wird / wurde
-        if (right->value == key || (rootOfTower != nullptr && isMarked(rootOfTower->next)))
-            return rootOfTower != nullptr; /// false falls noch nichts eingefügt wurde; true: sonst
+            Node *right = search(key, &left, currentHeight);
 
-        insertingNode->next = right;
-        if (left->next.compare_exchange_strong(right, insertingNode)) {
+            /// Falls Schlüssel schon in aktueller Ebene vorhanden ODER
+            /// root des aktuellen Towers zwischenzeitlich gelöscht wird / wurde
+            if (right->value == key || (rootOfTower != nullptr && isMarked(rootOfTower->next)))
+                return rootOfTower != nullptr; /// false falls noch nichts eingefügt wurde; true: sonst
 
-            inserted = insertingNode;
-            if (rootOfTower == nullptr) rootOfTower = inserted;
-            currentHeight++;
-        }
+            insertingNode->next = right;
+            if (left->next.compare_exchange_strong(right, insertingNode)) {
+
+                inserted = insertingNode;
+                if (rootOfTower == nullptr) rootOfTower = inserted;
+                currentHeight++;
+                wasInserted = true;
+            }
+        } while (!wasInserted);
 
     }
-    return false;
+    return true;
 }
+
 
 bool SkipList::remove(int key) {}
 
