@@ -289,7 +289,7 @@ void SkipList::tryMark(Node *delNode, int threadId) {
  */
 Node *SkipList::tryFlagNode(Node *previousNode, Node *targetNode) {
 //    Node *unmarkedPrevious = this->getNode(previousNode);
-    if (getNode(previousNode)->isLimitingNode && getNode(targetNode)->isHeadNode)
+    if (getNode(targetNode)->isLimitingNode && !getNode(targetNode)->isHeadNode)
         std::cout << "trying flagging limit node" << std::endl;
     while (true) {
         Node *prevUnmarked = getNode(previousNode);
