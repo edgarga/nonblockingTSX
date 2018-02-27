@@ -26,6 +26,7 @@ int main() {
 //    Node *right = list.search(5, &left, 0);
 
     bool insertSuccess = list.insert(20);
+    bool removeSucc = list.remove(20);
 
     return 0;
 }

@@ -59,8 +59,8 @@ bool SkipList::insert(int key) {
     while (currentHeight < towerHeight) {
         Node *insertingNode = new Node(key);
         insertingNode->down = inserted;
+        insertingNode->root = rootOfTower;
         Node *left;
-        bool wasInserted = false;
         do {
 
             Node *right = search(key, &left, currentHeight);
@@ -74,18 +74,77 @@ bool SkipList::insert(int key) {
             if (left->next.compare_exchange_strong(right, insertingNode)) {
 
                 inserted = insertingNode;
+                inserted->level = currentHeight;
                 if (rootOfTower == nullptr) rootOfTower = inserted;
                 currentHeight++;
-                wasInserted = true;
+                break;
             }
-        } while (!wasInserted);
+        } while (true);
 
     }
     return true;
 }
 
 
-bool SkipList::remove(int key) {}
+bool SkipList::remove(int key) {
+    Node *left = nullptr, *del = nullptr, *right = nullptr;
+    bool didThisThreadMarkRoot = false;
+    bool markedFinished = false;
+    bool rootWasDeleted = false;
+    do {
+
+        del = search(key, &left);
+
+        if ((del->value != key || del->isLimit) && !didThisThreadMarkRoot) return false;
+        Node *root = del->root;
+
+
+        /// Phase 1: Markieren aller Elemente des Turms
+        /// Phase 1.1: Markieren des root elements
+        if (!didThisThreadMarkRoot && !markedFinished) {
+            Node *nextOfRoot = root->next;
+            if (isMarked(nextOfRoot)) return false;
+            if (root->next.compare_exchange_strong(nextOfRoot, getMarked(nextOfRoot))) {
+                didThisThreadMarkRoot = true;
+            } else {
+                continue;
+            }
+            /// Phase 1.2: Markieren des restlichen Turms, von oben nach Unten
+        } else if (didThisThreadMarkRoot && !markedFinished) {
+
+            Node *currentMarking = del;
+            while (currentMarking != root) {
+                Node *nextOfCurr = getUnmarked(currentMarking->next);
+                if (del->next.compare_exchange_strong(nextOfCurr, getMarked(nextOfCurr))){
+                    currentMarking = currentMarking->down;
+
+                }
+
+            }
+            markedFinished = true;
+//            right = getUnmarked(del->next);
+//            if (del->next.compare_exchange_strong(right, getMarked(right)))
+//                if (del->down == nullptr)
+//                    markedFinished = true;
+            continue;
+
+        } else { /// Phase 2: Löschen des Turms von oben nach unten
+            right = getUnmarked(del->next);
+            if (left->next.compare_exchange_strong(del, right))
+                if (del->down == nullptr)
+                    return true;
+            continue;
+        }
+//        /// Phase 1.2: Markieren des restlichen Turms, von oben nach unten
+//        Node *currentMarking = del;
+//        while (currentMarking != root) {
+//            Node *nextOfCurr = getUnmarked(currentMarking->next);
+//
+//        }
+
+    } while (true);
+    return true;
+}
 
 Node *SkipList::search(int key) {
     Node *currentNode = this->headTop;
