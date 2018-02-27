@@ -122,10 +122,6 @@ bool SkipList::remove(int key) {
 
             }
             markedFinished = true;
-//            right = getUnmarked(del->next);
-//            if (del->next.compare_exchange_strong(right, getMarked(right)))
-//                if (del->down == nullptr)
-//                    markedFinished = true;
             continue;
 
         } else { /// Phase 2: Löschen des Turms von oben nach unten
@@ -135,15 +131,8 @@ bool SkipList::remove(int key) {
                     return true;
             continue;
         }
-//        /// Phase 1.2: Markieren des restlichen Turms, von oben nach unten
-//        Node *currentMarking = del;
-//        while (currentMarking != root) {
-//            Node *nextOfCurr = getUnmarked(currentMarking->next);
-//
-//        }
 
     } while (true);
-    return true;
 }
 
 Node *SkipList::search(int key) {
