@@ -19,8 +19,9 @@ public:
 
 
     Node *search(int key);
-    Node *search(int key, Node **left);
-    Node *search(int key, Node **left, int onLebel);
+    Node *searchWithMarked(int key, Node **left);
+    Node *searchWithMarked(int key, Node **left, int onLevel);
+    Node *search(int key, Node **left, int onLevel);
 
     bool insert(int key);
     bool remove(int key);
@@ -28,6 +29,9 @@ public:
     bool isMarked(Node *ptr);
     Node *getMarked(Node *ptr);
     Node *getUnmarked(Node *ptr);
+
+    bool isPhysicallyDeleted(Node *ptr);
+    Node *getDeletedPtr(Node *ptr);
 
     explicit SkipList(int height);
     ~SkipList();
