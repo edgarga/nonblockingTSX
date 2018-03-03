@@ -17,14 +17,15 @@ public:
     Node *headRootNode, *headTop;
     Node *tailRootNode, *tailTop;
 
-
     Node *search(int key);
-    Node *searchWithMarked(int key, Node **left);
-    Node *searchWithMarked(int key, Node **left, int onLevel);
-    Node *search(int key, Node **left, int onLevel);
+    Node *searchToLevel(int key, Node **left, int to);
+    Node *searchTopmost(int key, Node **left);
+    Node *searchTopmost(int key, Node **left, int onLevel);
+//    Node *search(int key, Node **left, int onLevel);
 
     bool insert(int key);
-    bool remove(int key);
+//    bool remove(int key);
+    bool del(int key);
 
     bool isMarked(Node *ptr);
     Node *getMarked(Node *ptr);
