@@ -132,13 +132,13 @@ int main() {
     insertCount = 0;
     removeCount = 0;
 
-    int num_elements = 10000;
-    int max = 20;
-//    insertWorker(list, num_elements, max, 1);
+    int num_elements = 100000;
+    int max = 256;
+    insertWorker(list, num_elements, max, 1);
 //    removeWorker(list, num_elements, max, 1);
     std::vector<std::thread> tv;
 
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 4; i++) {
         tv.push_back(std::thread(insertWorker, std::ref(list), num_elements, max, i));
         tv.push_back(std::thread(removeWorker, std::ref(list), num_elements, max, i));
     }
@@ -148,8 +148,9 @@ int main() {
     int inCount1 = 0;
     Node *cur = list.getUnmarked(list.headRootNode->next);
     while (cur != list.tailRootNode) {
+        if (!list.isMarked(cur->next))
+            inCount1++;
         cur = list.getUnmarked(cur->next);
-        inCount1++;
     }
 
     int oldVal = list.headRootNode->value;
@@ -167,7 +168,7 @@ int main() {
     std::cout << "in List: " << inCount1 << " | count: " << insertCount - removeCount << std::endl;
     std::cout << "inserts: " << insertCount << " | deletes: " << removeCount << std::endl;
     std::cout << "List is in ascending Order: " << (isAsc ? "true" : "false") << std::endl;
-    print(list);
+//    print(list);
 
 
     return 0;

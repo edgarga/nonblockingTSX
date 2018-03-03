@@ -54,6 +54,7 @@ bool SkipList::insert(int key) {
     int towerHeight = (rand() % (this->height - 1)) + 1;
 //    int towerHeight = ((rand() % 2) * (rand() % (this->height - 2))) + 1;
     int currentHeight = 0;
+    bool insertedSomething = false;
 
 //    std::cout << " building tower for: " << key << " height: " << towerHeight << std::endl;
     Node *inserted = nullptr;
@@ -74,7 +75,7 @@ bool SkipList::insert(int key) {
             /// Falls Schlüssel schon in aktueller Ebene vorhanden ODER
             /// root des aktuellen Towers zwischenzeitlich gelöscht wird / wurde
             if (right->value == key || (rootOfTower != nullptr && isMarked(rootOfTower->next)))
-                return rootOfTower != nullptr; /// false falls noch nichts eingefügt wurde; true: sonst
+                return insertedSomething; /// false falls noch nichts eingefügt wurde; true: sonst
 
             insertingNode->next = right;
             insertingNode->level = currentHeight;
@@ -82,7 +83,7 @@ bool SkipList::insert(int key) {
             if (getUnmarked(left)->level != getUnmarked(insertingNode)->level)
                 std::cout << "wuuut" << std::endl;
             if (left->next.compare_exchange_strong(right, insertingNode)) {
-
+                insertedSomething = true;
                 inserted = insertingNode;
                 if (rootOfTower == nullptr) rootOfTower = inserted;
                 currentHeight++;
@@ -165,59 +166,36 @@ bool SkipList::del(int key) {
 
     del = searchTopmost(key, &left, 0);
 
-    if ((del->value != key || del->isLimit) && !didThisThreadMarkRoot) return false;
+    if (del->value != key || del->isLimit) return false;
     Node *root = del->root;
 
 
     /// Phase 1: Markieren aller Elemente des Turms
     /// Phase 1.1: Markieren des root elements
-//        if (!didThisThreadMarkRoot && !markedFinished) {
-    Node *nextOfRoot = root->next;
-    if (isMarked(nextOfRoot)) return false;
-    if (root->next.compare_exchange_strong(nextOfRoot, getMarked(nextOfRoot))) {
-        didThisThreadMarkRoot = true;
-    } else {
-//                continue;
+    while (true) {
+
+        Node *nextOfRoot = root->next;
+        if (isMarked(nextOfRoot)) return false;
+        if (root->next.compare_exchange_strong(nextOfRoot, getMarked(nextOfRoot))) {
+            didThisThreadMarkRoot = true;
+            break;
+        }
     }
 
-//        } else
-    if (didThisThreadMarkRoot &&
-        !markedFinished) {/// Phase 1.2: Markieren des restlichen Turms, von oben nach Unten
+    /// Phase 1.2: Markieren des restlichen Turms, von oben nach Unten
 
-        Node *currentMarking = del;
-        while (currentMarking != root) {
-            Node *nextOfCurr = currentMarking->next;
-            if (isMarked(nextOfCurr) ||
-                currentMarking->next.compare_exchange_strong(nextOfCurr, getMarked(nextOfCurr))) {
-                currentMarking = currentMarking->down;
-
-            }
+    Node *currentMarking = del;
+    while (currentMarking != root) {
+        Node *nextOfCurr = currentMarking->next;
+        if (isMarked(nextOfCurr) ||
+            currentMarking->next.compare_exchange_strong(nextOfCurr, getMarked(nextOfCurr))) {
+            currentMarking = currentMarking->down;
 
         }
-        markedFinished = true;
-//        continue;
-        return true;
-    } else { /// Phase 2: Löschen des Turms von oben nach unten
-        return true;
-//            if (isPhysicallyDeleted(del->next)) continue;
-//
-//            right = getUnmarked(del->next);
-//
-//            if (left->next.compare_exchange_strong(del, right)) {
-//
-//                while (true) { /// marking the physically deleted note as such
-//                    Node *next = del->next;
-//                    if (isPhysicallyDeleted(next) || del->next.compare_exchange_strong(next, getDeletedPtr(next)))
-//                        break;
-//                }
-//
-//                if (del->down == nullptr)
-//                    return true;
-//            }
-//            continue;
-    }
 
-//    } while (true);
+    }
+    return true;
+
 }
 
 Node *SkipList::searchToLevel(int key, Node **leftNode, int toL) {
@@ -351,7 +329,7 @@ Node *SkipList::searchTopmost(int key, Node **leftNode, int onLevel) {
                 t = (*leftNode)->down;
                 tNext = t->next;
                 (*leftNode) = t;
-                    leftNextNode = tNext;
+                leftNextNode = tNext;
                 currentLevel--;
             } else {
 
