@@ -15,46 +15,9 @@ void insertWorker(SkipList &list, int numberOfTries, int max, int threadId) {
 
 void removeWorker(SkipList &list, int numberOfTries, int max, int threadId) {
     for (int i = 0; i < numberOfTries; i++) {
-        if (list.del(rand() % max))
+        if (list.remove(rand() % max, threadId))
             removeCount++;
     }
-}
-
-bool insert(int key, int levels, SkipList &list) {
-    int towerHeight = levels;
-    int currentHeight = 0;
-
-    std::cout << " building tower for: " << key << " height: " << towerHeight << std::endl;
-    Node *inserted = nullptr;
-    Node *rootOfTower = nullptr;
-
-    while (currentHeight < towerHeight) {
-        Node *insertingNode = new Node(key);
-        insertingNode->down = inserted;
-        Node *left;
-        do {
-
-            Node *right = list.searchToLevel(key, &left, currentHeight);
-
-            /// Falls Schlüssel schon in aktueller Ebene vorhanden ODER
-            /// root des aktuellen Towers zwischenzeitlich gelöscht wird / wurde
-            if (right->value == key || (rootOfTower != nullptr && list.isMarked(rootOfTower->next)))
-                return rootOfTower != nullptr; /// false falls noch nichts eingefügt wurde; true: sonst
-
-            insertingNode->next = right;
-            if (left->next.compare_exchange_strong(right, insertingNode)) {
-
-                inserted = insertingNode;
-                inserted->level = currentHeight;
-                if (rootOfTower == nullptr) rootOfTower = inserted;
-                insertingNode->root = rootOfTower;
-                currentHeight++;
-                break;
-            }
-        } while (true);
-
-    }
-    return true;
 }
 
 void print(SkipList &list) {
@@ -79,7 +42,7 @@ void print(SkipList &list) {
 
 int main() {
     std::cout << "start" << std::endl;
-    SkipList list(5);
+    SkipList list(5, 1);
 //    list.insert(1);
 //    list.insert(3);
 //    Node *t3;
@@ -134,11 +97,11 @@ int main() {
 
     int num_elements = 100000;
     int max = 256;
-    insertWorker(list, num_elements, max, 1);
+//    insertWorker(list, num_elements, max, 1);
 //    removeWorker(list, num_elements, max, 1);
     std::vector<std::thread> tv;
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 5; i++) {
         tv.push_back(std::thread(insertWorker, std::ref(list), num_elements, max, i));
         tv.push_back(std::thread(removeWorker, std::ref(list), num_elements, max, i));
     }
@@ -150,6 +113,8 @@ int main() {
     while (cur != list.tailRootNode) {
         if (!list.isMarked(cur->next))
             inCount1++;
+        else
+            std::cout << "marked in list" << std::endl;
         cur = list.getUnmarked(cur->next);
     }
 
@@ -167,6 +132,12 @@ int main() {
 
     std::cout << "in List: " << inCount1 << " | count: " << insertCount - removeCount << std::endl;
     std::cout << "inserts: " << insertCount << " | deletes: " << removeCount << std::endl;
+    std::cout << std::endl << "max TSX tries: " << list.maxTsxTries << std::endl;
+    std::cout << "TSX_Inserts: " << list.tsxInsertCount << "(" <<
+              (((static_cast<double> (list.tsxInsertCount)) / (static_cast<double> (insertCount))) * 100)
+              << "%)" " | TSX_Deletes: " << list.tsxRemoveCount << "(" <<
+              (((static_cast<double> (list.tsxRemoveCount)) / (static_cast<double> (removeCount))) * 100) << "%)"
+              << std::endl;
     std::cout << "List is in ascending Order: " << (isAsc ? "true" : "false") << std::endl;
 //    print(list);
 

@@ -8,8 +8,10 @@
 #include <iostream>
 #include "skipList.h"
 
-SkipList::SkipList(int height) {
-    this->height = height;
+void SkipList::init() {
+
+    this->tsxInsertCount = 0;
+    this->tsxRemoveCount = 0;
 
     Node *curHead, *lastHead;
     Node *curTail, *lastTail;
@@ -47,42 +49,90 @@ SkipList::SkipList(int height) {
     }
     this->headTop = lastHead;
     this->tailTop = lastTail;
+}
+
+SkipList::SkipList(int height) {
+    this->height = height;
+    init();
+    this->maxTsxTries = 3;
+}
+
+SkipList::SkipList(int height, int tsxTries) {
+    this->height = height;
+    this->maxTsxTries = tsxTries;
+    init();
 
 }
 
 bool SkipList::insert(int key) {
     int towerHeight = (rand() % (this->height - 1)) + 1;
-//    int towerHeight = ((rand() % 2) * (rand() % (this->height - 2))) + 1;
     int currentHeight = 0;
     bool insertedSomething = false;
+    int unseccussfulTsxTries = 0;
 
-//    std::cout << " building tower for: " << key << " height: " << towerHeight << std::endl;
     Node *inserted = nullptr;
     Node *rootOfTower = nullptr;
+
 
     while (currentHeight < towerHeight) {
         Node *insertingNode = new Node(key);
         insertingNode->down = inserted;
         Node *left;
         do {
-
+//            bool insertedByTsx = false;
             Node *right = searchToLevel(key, &left, currentHeight);
-            if (getUnmarked(right)->level != getUnmarked(left)->level)
-                std::cout << "wuuut" << std::endl;
-            if (getUnmarked(right)->level != currentHeight || getUnmarked(left)->level != currentHeight)
-                std::cout << "wuuut" << std::endl;
+
+            insertingNode->next = right;
+            insertingNode->level = currentHeight;
+            insertingNode->root = (rootOfTower != nullptr ? rootOfTower : insertingNode);
+
+
+            if (unseccussfulTsxTries++ < this->maxTsxTries) {
+                unsigned status;
+                LockElision elision;
+                if ((status = elision.startTransaction()) == _XBEGIN_STARTED) {
+
+
+
+                    if (right->value == key || (rootOfTower != nullptr && isMarked(rootOfTower->next)))
+                        return insertedSomething; /// false falls noch nichts eingefügt wurde; true: sonst
+                    if(isMarked(left->next)){
+                        unseccussfulTsxTries--;
+                        continue;
+                    }
+
+                    left->next = insertingNode;
+                    insertedSomething = true;
+//                    insertedByTsx = true;
+                    inserted = insertingNode;
+                    currentHeight++;
+                    if (rootOfTower == nullptr) rootOfTower = insertingNode;
+                }
+                if ((elision.endTransaction() &&
+                     (status == _XBEGIN_STARTED || status == 0))) {
+                    unseccussfulTsxTries--;
+                    if (currentHeight == towerHeight){
+                        this->tsxInsertCount++;
+                        return true;
+                    }
+                    break;
+                }
+
+                if (status & _XABORT_RETRY) {
+
+                } else {
+                    continue;
+                }
+            }
 
             /// Falls Schlüssel schon in aktueller Ebene vorhanden ODER
             /// root des aktuellen Towers zwischenzeitlich gelöscht wird / wurde
             if (right->value == key || (rootOfTower != nullptr && isMarked(rootOfTower->next)))
                 return insertedSomething; /// false falls noch nichts eingefügt wurde; true: sonst
 
-            insertingNode->next = right;
-            insertingNode->level = currentHeight;
-            insertingNode->root = (rootOfTower != nullptr ? rootOfTower : insertingNode);
-            if (getUnmarked(left)->level != getUnmarked(insertingNode)->level)
-                std::cout << "wuuut" << std::endl;
-            if (left->next.compare_exchange_strong(right, insertingNode)) {
+
+            if (left->next.compare_exchange_strong(right,
+                                                   insertingNode)) { //TODO: zweiWord CAS notwendig (darf nur eingesetzt werden wenn auch root.next unmarked ist)
                 insertedSomething = true;
                 inserted = insertingNode;
                 if (rootOfTower == nullptr) rootOfTower = inserted;
@@ -92,92 +142,73 @@ bool SkipList::insert(int key) {
         } while (true);
 
     }
+    if (isMarked(rootOfTower->next) && !isMarked(inserted->next)) {
+        Node *cur = inserted;
+        while (!isMarked(cur->next)) {
+            Node *n = cur->next;
+            if (cur->next.compare_exchange_strong(n, getMarked(n)))
+                cur = cur->down;
+        }
+    }
+    if (isMarked(rootOfTower->next) && !isMarked(inserted->next))
+        std::cout << "snh" << std::endl;
     return true;
 }
 
-//
-//bool SkipList::remove(int key) {
-//    Node *left = nullptr, *del = nullptr, *right = nullptr;
-//    bool didThisThreadMarkRoot = false;
-//    bool markedFinished = false;
-//    bool rootWasDeleted = false;
-//    do {
-//
-//        del = searchTopmost(key, &left);
-//
-//        if ((del->value != key || del->isLimit) && !didThisThreadMarkRoot) return false;
-//        Node *root = del->root;
-//
-//
-//        /// Phase 1: Markieren aller Elemente des Turms
-//        /// Phase 1.1: Markieren des root elements
-//        if (!didThisThreadMarkRoot && !markedFinished) {
-//            Node *nextOfRoot = root->next;
-//            if (isMarked(nextOfRoot)) return false;
-//            if (root->next.compare_exchange_strong(nextOfRoot, getMarked(nextOfRoot))) {
-//                didThisThreadMarkRoot = true;
-//            } else {
-//                continue;
-//            }
-//
-//        } else if (didThisThreadMarkRoot &&
-//                   !markedFinished) {/// Phase 1.2: Markieren des restlichen Turms, von oben nach Unten
-//
-//            Node *currentMarking = del;
-//            while (currentMarking != root) {
-//                Node *nextOfCurr = getUnmarked(currentMarking->next);
-//                if (isMarked(nextOfCurr) ||
-//                    currentMarking->next.compare_exchange_strong(nextOfCurr, getMarked(nextOfCurr))) {
-//                    currentMarking = currentMarking->down;
-//
-//                }
-//
-//            }
-//            markedFinished = true;
-//            continue;
-//
-//        } else { /// Phase 2: Löschen des Turms von oben nach unten
-//            if (isPhysicallyDeleted(del->next)) continue;
-//
-//            right = getUnmarked(del->next);
-//
-//            if (left->next.compare_exchange_strong(del, right)) {
-//
-//                while (true) { /// marking the physically deleted note as such
-//                    Node *next = del->next;
-//                    if (isPhysicallyDeleted(next) || del->next.compare_exchange_strong(next, getDeletedPtr(next)))
-//                        break;
-//                }
-//
-//                if (del->down == nullptr)
-//                    return true;
-//            }
-//            continue;
-//        }
-//
-//    } while (true);
-//}
+bool SkipList::remove(int key, int threadId) {
+    Node *left = nullptr, *del = nullptr;
+    int tsxTries = 0;
 
-bool SkipList::del(int key) {
-    Node *left = nullptr, *del = nullptr, *right = nullptr;
-    bool didThisThreadMarkRoot = false;
-    bool markedFinished = false;
-//    do {
+    Node *root;
+
+    while (tsxTries < this->maxTsxTries) {
+        del = searchTopmost(key, &left, 0);
+
+        while (tsxTries++ < this->maxTsxTries) {
+            unsigned status;
+            Node *currentMarkingNode;
+            LockElision elision;
+            if (del->value != key || del->isLimit) return false;
+
+            if ((status = elision.startTransaction()) == _XBEGIN_STARTED) {
+                root = del->root;
+                if (isMarked(root->next)) return false;
+
+                currentMarkingNode = del;
+                while (currentMarkingNode != nullptr) {
+                    currentMarkingNode->next = getMarked(currentMarkingNode->next);
+                    currentMarkingNode = currentMarkingNode->down;
+                }
+            }
+
+            if ((elision.endTransaction() && (status == _XBEGIN_STARTED || status == 0))) {
+                this->tsxRemoveCount++;
+                return true;
+            }
+
+            if (status & _XABORT_RETRY) {
+
+            } else {
+                break; /// new search will be initiated
+            }
+        }
+    }
 
     del = searchTopmost(key, &left, 0);
-
     if (del->value != key || del->isLimit) return false;
-    Node *root = del->root;
-
+    root = del->root;
 
     /// Phase 1: Markieren aller Elemente des Turms
     /// Phase 1.1: Markieren des root elements
     while (true) {
 
         Node *nextOfRoot = root->next;
+        Node *unmarkedNextOfRoot = getUnmarked(nextOfRoot);
+        Node *markedNextOfRoot = getMarked(nextOfRoot);
         if (isMarked(nextOfRoot)) return false;
-        if (root->next.compare_exchange_strong(nextOfRoot, getMarked(nextOfRoot))) {
-            didThisThreadMarkRoot = true;
+        if (root->next.compare_exchange_strong(unmarkedNextOfRoot, markedNextOfRoot)) {
+            if (!isMarked(root->next))
+                std::cout << "nein nein nein!" << std::endl;
             break;
         }
     }
@@ -190,18 +221,14 @@ bool SkipList::del(int key) {
         if (isMarked(nextOfCurr) ||
             currentMarking->next.compare_exchange_strong(nextOfCurr, getMarked(nextOfCurr))) {
             currentMarking = currentMarking->down;
-
         }
 
     }
     return true;
-
 }
 
 Node *SkipList::searchToLevel(int key, Node **leftNode, int toL) {
     Node *leftNextNode = nullptr, *rightNode = nullptr;
-//    Node *left;
-//    Node **leftNode = &left;
     int levelTo = toL;
 //        1: Find left and right nodes
     do {
@@ -210,23 +237,16 @@ Node *SkipList::searchToLevel(int key, Node **leftNode, int toL) {
         (*leftNode) = this->headTop;
         int currentLevel = t->level;
 
-        Node *old_t = t, *old_tNext = tNext;
 
         do {
 
-            if (
-//                    !isMarked(getUnmarked(tNext)->next) ||
-                    getUnmarked(tNext)->value > key && currentLevel > levelTo) {
+            if (getUnmarked(tNext)->value > key && currentLevel > levelTo) {
                 t = (*leftNode)->down;
                 tNext = t->next;
                 (*leftNode) = t;
                 leftNextNode = tNext;
                 currentLevel--;
             } else {
-
-
-//            if (!isMarked(t))
-//                (*leftNode) = t;
 
                 if (!isMarked(tNext)) {
                     (*leftNode) = t;
@@ -240,10 +260,6 @@ Node *SkipList::searchToLevel(int key, Node **leftNode, int toL) {
                         continue;
                 }
                 tNext = t->next;
-                if (getUnmarked(t)->level != getUnmarked(tNext)->level)
-                    std::cout << "search to lvl" << std::endl;
-                old_t = t;
-                old_tNext = tNext;
             }
         } while ((isMarked(tNext) || (t->value < key)) || currentLevel > levelTo);
         rightNode = t;
@@ -256,17 +272,8 @@ Node *SkipList::searchToLevel(int key, Node **leftNode, int toL) {
                 return rightNode;
             }
         }
-        if (getUnmarked(t)->level != getUnmarked(tNext)->level)
-            std::cout << "search to lvl cas" << std::endl;
         if ((*leftNode)->next.compare_exchange_strong(leftNextNode,
                                                       rightNode)) {
-//            Node *nextOfDeleted = leftNextNode->next;
-//            while (!isPhysicallyDeleted(nextOfDeleted)) {
-//                if (getUnmarked(leftNextNode)->level != getUnmarked(nextOfDeleted)->level)
-//                    std::cout << "wuuut" << std::endl;
-//                leftNextNode->next.compare_exchange_strong(nextOfDeleted, getDeletedPtr(nextOfDeleted));
-//                nextOfDeleted = leftNextNode->next;
-//            }
             if ((!rightNode->isLimit) && isMarked(rightNode)) {
                 //TODO: delete the node properly
 //                delete rightNode;
@@ -323,9 +330,7 @@ Node *SkipList::searchTopmost(int key, Node **leftNode, int onLevel) {
         do {
 
 
-            if (
-//                    !isMarked(getUnmarked(tNext)->next) &&
-                    getUnmarked(tNext)->value > key && currentLevel > levelTo) {
+            if (getUnmarked(tNext)->value > key && currentLevel > levelTo) {
                 t = (*leftNode)->down;
                 tNext = t->next;
                 (*leftNode) = t;
@@ -346,8 +351,6 @@ Node *SkipList::searchTopmost(int key, Node **leftNode, int onLevel) {
                         continue;
                 }
                 tNext = t->next;
-                if (getUnmarked(t)->level != getUnmarked(tNext)->level)
-                    std::cout << "wuuut" << std::endl;
             }
         } while ((isMarked(tNext) || (t->value < key)));
         rightNode = t;
@@ -362,13 +365,6 @@ Node *SkipList::searchTopmost(int key, Node **leftNode, int onLevel) {
         }
         if ((*leftNode)->next.compare_exchange_weak(leftNextNode,
                                                     rightNode)) {
-//            Node *nextOfDeleted = leftNextNode->next;
-//            while (!isPhysicallyDeleted(nextOfDeleted)) {
-//                if (getUnmarked(leftNextNode)->level != getUnmarked(nextOfDeleted)->level)
-//                    std::cout << "wuuut" << std::endl;
-//                leftNextNode->next.compare_exchange_strong(nextOfDeleted, getDeletedPtr(nextOfDeleted));
-//                nextOfDeleted = leftNextNode->next;
-//            }
             if ((!rightNode->isLimit) && isMarked(rightNode)) {
                 //TODO: delete the node properly
 //                delete rightNode;
@@ -378,95 +374,54 @@ Node *SkipList::searchTopmost(int key, Node **leftNode, int onLevel) {
             }
         }
     } while (true);
-//    Node *right = headTop;
-//    int currentLevel = right->level;
-//    do {
-//        (*left) = right;
-//        if (getUnmarked(right->next)->value <= key) {
-//            right = getUnmarked(right->next);
-//        } else if (currentLevel > onLevel) {
-//            right = right->down;
-//            currentLevel--;
-//        } else {
-//            right = getUnmarked(right->next);
-//            break;
-//        }
-//    } while (right->value < key);
-//    return right;
 }
 
-//Node *SkipList::search(int key, Node **leftNode, int onLevel) {
-//    Node *leftNextNode = nullptr, *rightNode = nullptr;
-//    int i = 0;
-//    do {
-//        Node *t = this->headTop;
-//        Node *tNext = this->headTop->next;
-////        1: Find left and right nodes
-//        do {
-//            i++;
-//
-//
-//            if (!isMarked(tNext)) {
-//                (*leftNode) = t;
-//                leftNextNode = tNext;
-//            }
-//            t = getUnmarked(tNext);
-//            if (t->isLimit)
-//                break;
-//            tNext = t->next;
-//        } while (isMarked(tNext) ||
-//                 (t->value < key));
-//        rightNode = t;
-//
-////        2: Check Nodes are adjacent
-//        if (leftNextNode == rightNode) {
-//            if ((!rightNode->isLimit) && isMarked(rightNode->next)) {
-//                continue;
-//            } else {
-//                return rightNode;
-//            }
-//        }
-//        if ((*leftNode)->next.compare_exchange_weak(leftNextNode,
-//                                                    rightNode)) {
-//            if ((!rightNode->isLimit) && isMarked(rightNode)) {
-//                //TODO: delete the node properly
-////                delete rightNode;
-//                continue;
-//            } else {
-//                return rightNode;
-//            }
-//        }
-//
-//    } while (true);
-//}
+bool SkipList::isMarked(size_t node) {
+    return (node & 1) != 0;
+}
 
 bool SkipList::isMarked(Node *node) {
-    size_t ptr = (size_t) node;
-    return (ptr & 0x1) != 0;
-
+    return isMarked((size_t) node);
 }
 
+/**
+ * Marks the pointer to the node object by setting the smallest bit
+ * @param node a pointer to a Node object
+ * @return returns node | 1 if node is not marked, node otherwise
+ */
 Node *SkipList::getMarked(Node *node) {
     size_t ptr = (size_t) node;
-    ptr = ptr | 0x1;
+    ptr = ptr | 1;
     return (Node *) ptr;
+
 }
 
+/**
+ * Unmakrs the pointer ot he Node object be unsetting the smallest bit
+ * @param node a pointer to a Node object
+ * @return returns the pointer with the least bit not set
+ */
 Node *SkipList::getUnmarked(Node *node) {
     size_t ptr = (size_t) node;
-    ptr = ptr & (std::numeric_limits<size_t>::max() - 0x1);
+    ptr = ptr & (std::numeric_limits<std::size_t>::max() - 1);
     return (Node *) ptr;
 }
 
-//bool SkipList::isPhysicallyDeleted(Node *node) {
+//bool SkipList::isMarked(Node *node) {
 //    size_t ptr = (size_t) node;
-//    return (ptr & 0x2) != 0;
+//    return (ptr & 1) != 0;
 //
 //}
 //
-//Node *SkipList::getDeletedPtr(Node *node) {
+//Node *SkipList::getMarked(Node *node) {
 //    size_t ptr = (size_t) node;
-//    ptr = ptr | 0x2;
+//    ptr = ptr | 1;
+//    return (Node *) ptr;
+//}
+//
+//Node *SkipList::getUnmarked(Node *node) {
+//    size_t ptr = (size_t) node;
+//    ptr = ptr & (std::numeric_limits<size_t>::max() - 1);
 //    return (Node *) ptr;
 //}
 
