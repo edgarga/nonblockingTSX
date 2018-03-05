@@ -10,8 +10,8 @@
 
 void SkipList::init() {
 
-    this->tsxInsertCount = 0;
-    this->tsxRemoveCount = 0;
+    tsxRemoveCount = 0;
+    tsxInsertCount = 0;
 
     Node *curHead, *lastHead;
     Node *curTail, *lastTail;
@@ -64,6 +64,182 @@ SkipList::SkipList(int height, int tsxTries) {
 
 }
 
+bool SkipList::insert(int key, benchmark::State &state) {
+    int towerHeight = (rand() % (this->height - 1)) + 1;
+    int currentHeight = 0;
+    bool insertedSomething = false;
+    int unseccussfulTsxTries = 0;
+
+    Node *inserted = nullptr;
+    Node *rootOfTower = nullptr;
+
+
+    while (currentHeight < towerHeight) {
+        Node *insertingNode = new Node(key);
+        insertingNode->down = inserted;
+        Node *left;
+        do {
+//            bool insertedByTsx = false;
+            Node *right = searchToLevel(key, &left, currentHeight);
+
+            insertingNode->next = right;
+            insertingNode->level = currentHeight;
+            insertingNode->root = (rootOfTower != nullptr ? rootOfTower : insertingNode);
+
+
+            if (unseccussfulTsxTries++ < this->maxTsxTries) {
+                unsigned status;
+                LockElision elision;
+                if ((status = elision.startTransaction()) == _XBEGIN_STARTED) {
+
+
+                    if (right->value == key || (rootOfTower != nullptr && isMarked(rootOfTower->next)))
+                        return insertedSomething; /// false falls noch nichts eingefügt wurde; true: sonst
+                    if (isMarked(left->next)) {
+                        unseccussfulTsxTries--;
+                        continue;
+                    }
+
+                    left->next = insertingNode;
+                    insertedSomething = true;
+//                    insertedByTsx = true;
+                    inserted = insertingNode;
+                    currentHeight++;
+                    if (rootOfTower == nullptr) rootOfTower = insertingNode;
+                }
+                if ((elision.endTransaction() &&
+                     (status == _XBEGIN_STARTED || status == 0))) {
+                    unseccussfulTsxTries--;
+                    state.counters["tsxInsertNodeCount"]++;
+                    if (currentHeight == towerHeight) {
+                        this->tsxInsertCount++;
+                        state.counters["tsxInsertTowerCount"]++;
+                        state.counters["sumTowerHeights"] += towerHeight;
+                        return true;
+                    }
+                    break;
+                }
+
+                if (status & _XABORT_RETRY) {
+
+                } else {
+                    continue;
+                }
+            }
+
+            /// Falls Schlüssel schon in aktueller Ebene vorhanden ODER
+            /// root des aktuellen Towers zwischenzeitlich gelöscht wird / wurde
+            if (right->value == key || (rootOfTower != nullptr && isMarked(rootOfTower->next))) {
+                Node *cur = inserted;
+                while (cur != nullptr && !isMarked(cur->next)) {
+                    Node *n = cur->next;
+                    if (cur->next.compare_exchange_strong(n, getMarked(n)))
+                        cur = cur->down;
+                }
+                return insertedSomething; /// false falls noch nichts eingefügt wurde; true: sonst
+            }
+
+            Node *unmarkedRight = getUnmarked(right);
+            if (left->next.compare_exchange_strong(unmarkedRight,
+                                                   insertingNode)) {
+                insertedSomething = true;
+                inserted = insertingNode;
+                if (rootOfTower == nullptr) rootOfTower = inserted;
+                currentHeight++;
+                state.counters["nonBlockInsertNodeCount"]++;
+                break;
+            }
+        } while (true);
+
+    }
+    if (isMarked(rootOfTower->next) && !isMarked(inserted->next)) {
+        Node *cur = inserted;
+        while (!isMarked(cur->next)) {
+            Node *n = cur->next;
+            if (cur->next.compare_exchange_strong(n, getMarked(n)))
+                cur = cur->down;
+        }
+    }
+    if (isMarked(rootOfTower->next) && !isMarked(inserted->next))
+        std::cout << "snh" << std::endl;
+    state.counters["nonBlockInsertTowerCount"]++;
+    state.counters["sumTowerHeights"] += towerHeight;
+    return true;
+}
+
+bool SkipList::remove(int key, benchmark::State &state) {
+    Node *left = nullptr, *del = nullptr;
+    int tsxTries = 0;
+
+    Node *root;
+
+    while (tsxTries < this->maxTsxTries) {
+        del = searchTopmost(key, &left, 0);
+
+        while (tsxTries++ < this->maxTsxTries) {
+            unsigned status;
+            Node *currentMarkingNode;
+            LockElision elision;
+            if (del->value != key || del->isLimit) return false;
+
+            if ((status = elision.startTransaction()) == _XBEGIN_STARTED) {
+                root = del->root;
+                if (isMarked(root->next)) return false;
+
+                currentMarkingNode = del;
+                while (currentMarkingNode != nullptr) {
+                    currentMarkingNode->next = getMarked(currentMarkingNode->next);
+                    currentMarkingNode = currentMarkingNode->down;
+                }
+            }
+
+            if ((elision.endTransaction() && (status == _XBEGIN_STARTED || status == 0))) {
+                state.counters["tsxRemoveCount"]++;
+                tsxRemoveCount++;
+                return true;
+            }
+
+            if (status & _XABORT_RETRY) {
+
+            } else {
+                break; /// new search will be initiated
+            }
+        }
+    }
+
+    del = searchTopmost(key, &left, 0);
+    if (del->value != key || del->isLimit) return false;
+    root = del->root;
+
+    /// Phase 1: Markieren aller Elemente des Turms
+    /// Phase 1.1: Markieren des root elements
+    while (true) {
+
+        Node *nextOfRoot = root->next;
+        Node *unmarkedNextOfRoot = getUnmarked(nextOfRoot);
+        Node *markedNextOfRoot = getMarked(nextOfRoot);
+        if (isMarked(nextOfRoot)) return false;
+        if (root->next.compare_exchange_strong(unmarkedNextOfRoot, markedNextOfRoot)) {
+            if (!isMarked(root->next))
+                std::cout << "nein nein nein!" << std::endl;
+            break;
+        }
+    }
+
+    /// Phase 1.2: Markieren des restlichen Turms, von oben nach Unten
+
+    Node *currentMarking = del;
+    while (currentMarking != root) {
+        Node *nextOfCurr = currentMarking->next;
+        if (isMarked(nextOfCurr) ||
+            currentMarking->next.compare_exchange_strong(nextOfCurr, getMarked(nextOfCurr))) {
+            currentMarking = currentMarking->down;
+        }
+
+    }
+    return true;
+}
+
 bool SkipList::insert(int key) {
     int towerHeight = (rand() % (this->height - 1)) + 1;
     int currentHeight = 0;
@@ -93,10 +269,9 @@ bool SkipList::insert(int key) {
                 if ((status = elision.startTransaction()) == _XBEGIN_STARTED) {
 
 
-
                     if (right->value == key || (rootOfTower != nullptr && isMarked(rootOfTower->next)))
                         return insertedSomething; /// false falls noch nichts eingefügt wurde; true: sonst
-                    if(isMarked(left->next)){
+                    if (isMarked(left->next)) {
                         unseccussfulTsxTries--;
                         continue;
                     }
@@ -111,7 +286,7 @@ bool SkipList::insert(int key) {
                 if ((elision.endTransaction() &&
                      (status == _XBEGIN_STARTED || status == 0))) {
                     unseccussfulTsxTries--;
-                    if (currentHeight == towerHeight){
+                    if (currentHeight == towerHeight) {
                         this->tsxInsertCount++;
                         return true;
                     }
@@ -127,8 +302,15 @@ bool SkipList::insert(int key) {
 
             /// Falls Schlüssel schon in aktueller Ebene vorhanden ODER
             /// root des aktuellen Towers zwischenzeitlich gelöscht wird / wurde
-            if (right->value == key || (rootOfTower != nullptr && isMarked(rootOfTower->next)))
+            if (right->value == key || (rootOfTower != nullptr && isMarked(rootOfTower->next))) {
+                Node *cur = inserted;
+                while (cur != nullptr && !isMarked(cur->next)) {
+                    Node *n = cur->next;
+                    if (cur->next.compare_exchange_strong(n, getMarked(n)))
+                        cur = cur->down;
+                }
                 return insertedSomething; /// false falls noch nichts eingefügt wurde; true: sonst
+            }
 
 
             if (left->next.compare_exchange_strong(right,
@@ -155,7 +337,7 @@ bool SkipList::insert(int key) {
     return true;
 }
 
-bool SkipList::remove(int key, int threadId) {
+bool SkipList::remove(int key) {
     Node *left = nullptr, *del = nullptr;
     int tsxTries = 0;
 
@@ -182,7 +364,7 @@ bool SkipList::remove(int key, int threadId) {
             }
 
             if ((elision.endTransaction() && (status == _XBEGIN_STARTED || status == 0))) {
-                this->tsxRemoveCount++;
+                tsxRemoveCount++;
                 return true;
             }
 

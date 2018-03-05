@@ -7,6 +7,7 @@
 
 
 #include "node.h"
+#include "/usr/local/include/benchmark/benchmark.h"
 
 class SkipList {
 
@@ -26,8 +27,10 @@ public:
     Node *searchToLevel(int key, Node **left, int to);
     Node *searchTopmost(int key, Node **left, int onLevel);
 
+    bool insert(int key, benchmark::State &state);
+    bool remove(int key, benchmark::State &state);
     bool insert(int key);
-    bool remove(int key, int threadId);
+    bool remove(int key);
 
     bool isMarked(size_t node);
     bool isMarked(Node *ptr);

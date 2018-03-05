@@ -2,20 +2,35 @@
 #include <thread>
 #include <vector>
 #include "skipList.h"
+#include "/usr/local/include/benchmark/benchmark.h"
 
 std::atomic<int> insertCount;
 std::atomic<int> removeCount;
 
-void insertWorker(SkipList &list, int numberOfTries, int max, int threadId) {
+void insertWorker(SkipList &list, int numberOfTries, int max, int threadId, benchmark::State &state) {
+    for (int i = 0; i < numberOfTries; i++) {
+        if (list.insert(rand() % max, state))
+            insertCount++;
+    }
+}
+
+void removeWorker(SkipList &list, int numberOfTries, int max, int threadId, benchmark::State &state) {
+    for (int i = 0; i < numberOfTries; i++) {
+        if (list.remove(rand() % max, state))
+            removeCount++;
+    }
+}
+
+void insertWorker_nb(SkipList &list, int numberOfTries, int max, int threadId) {
     for (int i = 0; i < numberOfTries; i++) {
         if (list.insert(rand() % max))
             insertCount++;
     }
 }
 
-void removeWorker(SkipList &list, int numberOfTries, int max, int threadId) {
+void removeWorker_nb(SkipList &list, int numberOfTries, int max, int threadId) {
     for (int i = 0; i < numberOfTries; i++) {
-        if (list.remove(rand() % max, threadId))
+        if (list.remove(rand() % max))
             removeCount++;
     }
 }
@@ -43,67 +58,19 @@ void print(SkipList &list) {
 int main() {
     std::cout << "start" << std::endl;
     SkipList list(5, 1);
-//    list.insert(1);
-//    list.insert(3);
-//    Node *t3;
-//    Node *sMark = list.searchTopmost(1, &t3);
-//    Node *sToLevel = list.searchToLevel(1, &t3, 0);
-//    list.insert(5);
-//    list.insert(7);
-////    insert(1, 4, list);
-////    insert(3, 3, list);
-////    insert(5, 2, list);
-////    insert(7, 4, list);
-//    list.del(3);
-//    print(list);
-//    list.del(5);
-//    Node *leftNode = nullptr;
-//    Node *drei = list.search(3);
-//    std::cout << "-------- inserted! ---------" << std::endl;
-//    print(list);
-//    Node *nextOfDrei = drei->next;
-//    drei->next.compare_exchange_strong(nextOfDrei, list.getMarked(nextOfDrei));
-//    drei = drei->down;
-//    nextOfDrei = drei->next;
-//    drei->next.compare_exchange_strong(nextOfDrei, list.getMarked(nextOfDrei));
-//    drei = drei->down;
-//    nextOfDrei = drei->next;
-//    drei->next.compare_exchange_strong(nextOfDrei, list.getMarked(nextOfDrei));
-
-//    std::cout << "-------- marked3! ---------" << std::endl;
-//    print(list);
-//    insert(3, 3, list);
-//    list.remove(3);
-//    std::cout << "-------- inserted 6! ---------" << std::endl;
-//    print(list);
-
-//    int searchKey = 3;
-//
-//    Node *searchNode;
-//    int l = 0;
-//    do {
-//
-//        searchNode = list.search(searchKey, &leftNode, l++);
-//        print(list);
-//        std::cout << "searchend: " << searchKey << " on level " << l - 1 << " | got: " << searchNode->value << "."
-//                  << searchNode->level << std::endl;
-//    } while (l < 3);
-//    std::cout << "searchend: " << searchKey << " on level " << l - 1 << " | got: " << searchNode->value << "."
-//              << searchNode->level << std::endl;
-
 
     insertCount = 0;
     removeCount = 0;
 
     int num_elements = 100000;
-    int max = 256;
+    int maxListLength = 256;
 //    insertWorker(list, num_elements, max, 1);
 //    removeWorker(list, num_elements, max, 1);
     std::vector<std::thread> tv;
 
     for (int i = 0; i < 5; i++) {
-        tv.push_back(std::thread(insertWorker, std::ref(list), num_elements, max, i));
-        tv.push_back(std::thread(removeWorker, std::ref(list), num_elements, max, i));
+        tv.push_back(std::thread(insertWorker_nb, std::ref(list), num_elements, maxListLength, i));
+        tv.push_back(std::thread(removeWorker_nb, std::ref(list), num_elements, maxListLength, i));
     }
     for (auto &t: tv)
         t.join();
@@ -144,3 +111,62 @@ int main() {
 
     return 0;
 }
+
+void testMethod(benchmark::State &state) {
+
+
+    for (auto _ : state) {
+        int maxHeightOfSkipList = state.range(0);
+        int numberOfListOperations = state.range(1);
+        int maxListLength = state.range(2);
+        int numberOfThreadsEach = state.range(3);
+        int tsxTries = state.range(4);
+        SkipList list(maxHeightOfSkipList, tsxTries);
+
+        std::vector<std::thread> tv;
+        for (int i = 0; i < numberOfThreadsEach; i++) {
+            tv.push_back(std::thread(insertWorker, std::ref(list), numberOfListOperations, maxListLength, i,
+                                     std::ref(state)));
+            tv.push_back(std::thread(removeWorker, std::ref(list), numberOfListOperations, maxListLength, i,
+                                     std::ref(state)));
+        }
+        for (auto &t: tv)
+            t.join();
+    }
+}
+
+BENCHMARK(testMethod)
+        ->Unit(benchmark::kMicrosecond)
+        ->Iterations(10)
+        ->Args({2, 10000, 10000, 4, 1}) /// Hoehe < 2 macht keinen Sinn, da =2 eine normale Linked List ist
+        ->Args({3, 10000, 10000, 4, 1})
+        ->Args({4, 10000, 10000, 4, 1})
+        ->Args({5, 10000, 10000, 4, 1})
+        ->Args({6, 10000, 10000, 4, 1})
+        ->Args({7, 10000, 10000, 4, 1})
+        ->Args({8, 10000, 10000, 4, 1})
+        ->Args({9, 10000, 10000, 4, 1})
+        ->Args({10, 10000, 10000, 4, 1})
+        ->Args({11, 10000, 10000, 4, 1})
+        ->Args({12, 10000, 10000, 4, 1})
+        ->Args({13, 10000, 10000, 4, 1})
+        ->Args({14, 10000, 10000, 4, 1})
+        ->Args({15, 10000, 10000, 4, 1})
+        ->Args({16, 10000, 10000, 4, 1})
+        ->Args({17, 10000, 10000, 4, 1})
+        ->Args({18, 10000, 10000, 4, 1})
+        ->Args({19, 10000, 10000, 4, 1})
+        ->Args({20, 10000, 10000, 4, 1});
+
+BENCHMARK(testMethod)
+        ->Unit(benchmark::kMicrosecond)
+        ->Iterations(10)
+        ->Args({10, 10000, 10000, 4, 1})
+        ->Args({10, 10000, 10000, 4, 2})
+        ->Args({10, 10000, 10000, 4, 3})
+        ->Args({10, 10000, 10000, 4, 4})
+        ->Args({10, 10000, 10000, 4, 5})
+        ->Args({10, 10000, 10000, 4, 6})
+;
+
+//BENCHMARK_MAIN();
