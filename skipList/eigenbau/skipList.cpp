@@ -123,6 +123,7 @@ bool SkipList::insert(int key, benchmark::State &state) {
                 if (status & _XABORT_RETRY) {
 
                 } else {
+                    state.counters["tsxInsertAborts"]++;
                     continue;
                 }
             }
@@ -202,6 +203,7 @@ bool SkipList::remove(int key, benchmark::State &state) {
             if (status & _XABORT_RETRY) {
 
             } else {
+                state.counters["tsxRemoveAborts"]++;
                 break; /// new search will be initiated
             }
         }

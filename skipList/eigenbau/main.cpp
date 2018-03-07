@@ -10,14 +10,14 @@ std::atomic<int> removeCount;
 void insertWorker(SkipList &list, int numberOfTries, int max, int threadId, benchmark::State &state) {
     for (int i = 0; i < numberOfTries; i++) {
         if (list.insert(rand() % max, state))
-            insertCount++;
+            state.counters["inserts"]++;
     }
 }
 
 void removeWorker(SkipList &list, int numberOfTries, int max, int threadId, benchmark::State &state) {
     for (int i = 0; i < numberOfTries; i++) {
         if (list.remove(rand() % max, state))
-            removeCount++;
+            state.counters["removes"]++;
     }
 }
 
@@ -55,7 +55,7 @@ void print(SkipList &list) {
     }
 }
 
-int main() {
+int main_() {
     std::cout << "start" << std::endl;
     SkipList list(5, 1);
 
@@ -114,7 +114,16 @@ int main() {
 
 void testMethod(benchmark::State &state) {
 
-
+    state.counters["tsxInsertNodeCount"] = 0;
+    state.counters["tsxInsertTowerCount"] = 0;
+    state.counters["sumTowerHeights"] = 0;
+    state.counters["tsxInsertAborts"] = 0;
+    state.counters["nonBlockInsertNodeCount"] = 0;
+    state.counters["nonBlockInsertTowerCount"] = 0;
+    state.counters["tsxRemoveCount"] = 0;
+    state.counters["tsxRemoveAborts"] = 0;
+    state.counters["inserts"] = 0;
+    state.counters["removes"] = 0;
     for (auto _ : state) {
         int maxHeightOfSkipList = state.range(0);
         int numberOfListOperations = state.range(1);
@@ -133,6 +142,18 @@ void testMethod(benchmark::State &state) {
         for (auto &t: tv)
             t.join();
     }
+
+    state.counters["tsxInsertNodeCount"] /= state.iterations();
+    state.counters["tsxInsertTowerCount"] /= state.iterations();
+    state.counters["sumTowerHeights"] /= state.iterations();
+    state.counters["tsxInsertAborts"] /= state.iterations();
+    state.counters["nonBlockInsertNodeCount"] /= state.iterations();
+    state.counters["nonBlockInsertTowerCount"] /= state.iterations();
+    state.counters["tsxRemoveCount"] /= state.iterations();
+    state.counters["tsxRemoveAborts"] /= state.iterations();
+    state.counters["inserts"] /= state.iterations();
+    state.counters["removes"] /= state.iterations();
+
 }
 
 BENCHMARK(testMethod)
@@ -158,15 +179,15 @@ BENCHMARK(testMethod)
         ->Args({19, 10000, 10000, 4, 1})
         ->Args({20, 10000, 10000, 4, 1});
 
-BENCHMARK(testMethod)
-        ->Unit(benchmark::kMicrosecond)
-        ->Iterations(10)
-        ->Args({10, 10000, 10000, 4, 1})
-        ->Args({10, 10000, 10000, 4, 2})
-        ->Args({10, 10000, 10000, 4, 3})
-        ->Args({10, 10000, 10000, 4, 4})
-        ->Args({10, 10000, 10000, 4, 5})
-        ->Args({10, 10000, 10000, 4, 6})
-;
+//BENCHMARK(testMethod)
+//        ->Unit(benchmark::kMicrosecond)
+//        ->Iterations(10)
+//        ->Args({10, 10000, 10000, 4, 1})
+//        ->Args({10, 10000, 10000, 4, 2})
+//        ->Args({10, 10000, 10000, 4, 3})
+//        ->Args({10, 10000, 10000, 4, 4})
+//        ->Args({10, 10000, 10000, 4, 5})
+//        ->Args({10, 10000, 10000, 4, 6})
+//;
 
-//BENCHMARK_MAIN();
+BENCHMARK_MAIN();
